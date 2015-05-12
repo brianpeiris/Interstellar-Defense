@@ -1,0 +1,61 @@
+<!-- Framework for a generic 2D game that runs within AltspaceVR. Author: Elijah Newman-Gomez -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+		<title>VR Arcade Blocks</title>
+
+		<!-- Required by AltOBJMTLLoader.js -->
+		<script src="http://sdk.altvr.com/lib/three.min.js"></script>
+		<script src="http://sdk.altvr.com/lib/MTLLoader.js"></script>
+		<script src="http://sdk.altvr.com/lib/OBJMTLLoader.js"></script>
+		<script src="http://sdk.altvr.com/lib/firebase.js"></script>
+
+		<script src="http://sdk.altvr.com/src/AltOBJMTLLoader.js"></script>
+		<script src="http://sdk.altvr.com/src/AltRenderer.js"></script>
+		<script src="http://sdk.altvr.com/src/cursor/CursorEvents.js"></script>
+		<script src="http://sdk.altvr.com/src/cursor/AltObjectControls.js"></script>
+		<script src="http://sdk.altvr.com/src/sync/FirebaseSync.js"></script>
+
+		<script src="http://sdk.altvr.com/src/cursor/ColorHoverEffect.js"></script>
+		<script src="http://sdk.altvr.com/src/cursor/DragPlaneEffect.js"></script>
+
+		<style>
+			body {
+				background-color: rgba(0, 0, 0, 0);
+				margin: 0px;
+				overflow: hidden;
+
+				color: #FFFFFF;
+				font-family: Monospace;
+				font-size: 18px;
+				text-align: center;
+			}
+			#info {
+				position: absolute;
+				top: 0px;
+				width: 100%;
+				padding: 10px;
+			}
+		</style>
+
+</head>
+<body>
+
+	<div id="info">
+		SLURM - 2D Game Framework for VR
+	</div>
+
+	<script src="Actor.js"></script>
+	<script src="GameBoard.js"></script>
+
+	<script>
+		var inAltspace = !!window.Alt;
+
+		var board = new GameBoard();
+
+		var params = {aiClassName: "EnemyBee", modelName: "models/AltspaceCube/cube.obj"};
+		var actor = board.spawnActor(params);
+	</script>
+
+</body>
+</html>
