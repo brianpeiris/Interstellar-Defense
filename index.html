@@ -1,8 +1,8 @@
-<!-- Framework for a generic 2D game that runs within AltspaceVR. Author: Elijah Newman-Gomez -->
+<!-- Author: Elijah Newman-Gomez -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-		<title>VR Arcade Blocks</title>
+		<title>Intersteller Defense</title>
 
 		<!-- Required by AltOBJMTLLoader.js -->
 		<script src="http://sdk.altvr.com/lib/three.min.js"></script>
@@ -18,6 +18,22 @@
 
 		<script src="http://sdk.altvr.com/src/cursor/ColorHoverEffect.js"></script>
 		<script src="http://sdk.altvr.com/src/cursor/DragPlaneEffect.js"></script>
+
+		<!--
+		<script src="lib/three.min.js"></script>
+		<script src="lib/MTLLoader.js"></script>
+		<script src="lib/OBJMTLLoader.js"></script>
+		<script src="lib/firebase.js"></script>
+
+		<script src="src/AltOBJMTLLoader.js"></script>
+		<script src="src/AltRenderer.js"></script>
+		<script src="src/cursor/CursorEvents.js"></script>
+		<script src="src/cursor/AltObjectControls.js"></script>
+		<script src="src/sync/FirebaseSync.js"></script>
+
+		<script src="src/cursor/ColorHoverEffect.js"></script>
+		<script src="src/cursor/DragPlaneEffect.js"></script>
+		-->
 
 		<style>
 			body {
@@ -39,10 +55,10 @@
 		</style>
 
 </head>
-<body>
+<body onselectstart="return false;" ondragstart="return false;">
 
 	<div id="info">
-		SLURM - 2D Game Framework for VR
+		Intersteller Defense - 
 	</div>
 
 	<script src="Actor.js"></script>
@@ -53,8 +69,26 @@
 
 		var board = new GameBoard();
 
-		var params = {aiClassName: "EnemyBee", modelName: "models/AltspaceCube/cube.obj"};
-		var actor = board.spawnActor(params);
+		function startGame()
+		{
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: -40, z: -200}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: -20, z: -200}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: 0, z: -200}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: 20, z: -200}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: 40, z: -200}).ai.playSequence("entrance0");
+
+			var playerParams = {aiClassName: "PlayerTurret", modelName: "models/InterD/player_turret.obj", x: 0, y: 0, z: 0};
+			var player = board.spawnActor(playerParams);
+			board.playerTurret = player;
+		}
+
+		document.addEventListener("click", function() {
+			board.playerFire();
+		}, false);
+
+		startGame();
+
+		//setTimeout(function(){board.reset(false); startGame();}, 10000);
 	</script>
 
 </body>
