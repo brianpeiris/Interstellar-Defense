@@ -71,22 +71,55 @@
 
 		function startGame()
 		{
-			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: -40, z: -200}).ai.playSequence("entrance0");
-			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: -20, z: -200}).ai.playSequence("entrance0");
-			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: 0, z: -200}).ai.playSequence("entrance0");
-			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: 20, z: -200}).ai.playSequence("entrance0");
-			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/cube.obj", x: 0, y: 40, z: -200}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-80, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-40, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(0, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(40, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
+			board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(80, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
 
-			var playerParams = {aiClassName: "PlayerTurret", modelName: "models/InterD/player_turret.obj", x: 0, y: 0, z: 0};
+			var playerParams = {aiClassName: "PlayerTurret", modelName: "models/InterD/player_turret.obj", offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Vector3(0, 180, 0)};
 			var player = board.spawnActor(playerParams);
 			board.playerTurret = player;
+			//board.setHoloCursorMoveListener(player);
+			//setTimeout(function(){ player.sceneObject.translateZ(100); }, 1000);
 		}
 
 		document.addEventListener("click", function() {
 			board.playerFire();
 		}, false);
 
+		setTimeout(function(){ setInterval(function(){ board.playerFire(); }, 800)}, 3000);
+
 		startGame();
+
+		board.loader.load("models/InterD/defense_grid.obj", function ( loadedObject ) {
+			loadedObject.position.x = board.boardOffset.x;
+			loadedObject.position.y = board.boardOffset.y;
+			loadedObject.position.z = board.boardOffset.z + (-200 * board.scaleFactor);
+
+			var scale = new THREE.Vector3( board.scaleFactor, board.scaleFactor, board.scaleFactor);
+			if( board.isInAltspace )
+				loadedObject.scale.copy( scale );
+
+			board.scene.add(loadedObject);
+
+			board.setHoloCursorMoveListener(loadedObject);
+		});
+
+		/*
+
+		board.loader.load("models/InterD/player_turret.obj", function ( loadedObject ) {
+			loadedObject.position.x = board.boardOffset.x;
+			loadedObject.position.y = board.boardOffset.y;
+			loadedObject.position.z = board.boardOffset.z;
+
+			var scale = new THREE.Vector3( board.scaleFactor, board.scaleFactor, board.scaleFactor);
+			if( board.isInAltspace )
+				loadedObject.scale.copy( scale );
+
+			board.scene.add(loadedObject);
+		});
+*/
 
 		//setTimeout(function(){board.reset(false); startGame();}, 10000);
 	</script>

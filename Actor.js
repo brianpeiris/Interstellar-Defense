@@ -1,9 +1,22 @@
 function Actor(params)
 {
-	this.spawnX = params.x;
-	this.spawnY = params.y;
-	this.spawnZ = params.z;
-	this.spawnRotation = params.rotation;
+	this.spawnMatrix = null;
+	this.spawnOffset = null;
+	this.spawnRotation = null;
+
+	if( typeof params.offset != 'undefined' )
+		this.spawnOffset = params.offset;
+	else
+		this.spawnOffset = new THREE.Vector3(0, 0, 0);
+
+	if( typeof params.rotation != 'undefined' )
+		this.spawnRotation = params.rotation;
+	else
+		this.spawnRotation = new THREE.Vector3(0, 0, 0);
+
+	if( typeof params.matrix != 'undefined' )
+		this.spawnMatrix = params.matrix;
+
 	this.gameBoard = params.gameBoard;
 	this.modelName = params.modelName;
 	this.aiClassName = params.aiClassName;
@@ -30,22 +43,6 @@ Actor.prototype.destroy = function()
 	this.gameBoard.scene.remove(this.sceneObject);
 };
 
-Actor.prototype.deltaRotate = function(degrees, axis)
-{
-	var rotationAxis;
-
-	if( typeof axis != 'undefined' )
-		rotationAxis = axis;
-	else
-		rotationAxis = new THREE.Vector3(-1,0,0);
-
-   	var rotObjectMatrix = new THREE.Matrix4();
-   	rotObjectMatrix.makeRotationAxis(rotationAxis.normalize(), (Math.PI / 180) * degrees);
-
-	this.sceneObject.matrix.multiply(rotObjectMatrix);
-    this.sceneObject.rotation.setFromRotationMatrix(this.sceneObject.matrix);
-};
-
 Actor.prototype.orbitWorldOrigin = function(degrees)
 {
     var rotWorldMatrix = new THREE.Matrix4();
@@ -65,22 +62,44 @@ Actor.prototype.init = function()
 	var thisActor = this;
 	this.gameBoard.loader.load(filename, function ( loadedObject ) {
 //		thisActor.ai = eval("new " + thisActor.aiClassName + "(thisActor);");
-
 		thisActor.sceneObject = loadedObject;
+		loadedObject.up.set( 0, 0, 1 );
 
-		loadedObject.position.x = 0;
-		loadedObject.position.y = 0;
-		loadedObject.position.z = 0;
+		// If there is a matrix to clone, apply it first
+		if( thisActor.spawnMatrix )
+			loadedObject.applyMatrix(thisActor.spawnMatrix);
+		else
+		{
+			// Otherwise we still need to apply the board offset
+			loadedObject.position.x = thisActor.gameBoard.boardOffset.x;
+			loadedObject.position.y = thisActor.gameBoard.boardOffset.y;
+			loadedObject.position.z = thisActor.gameBoard.boardOffset.z;
+			loadedObject.rotation.x = 0;
+			loadedObject.rotation.y = 0;
+			loadedObject.rotation.z = 0;
+		}
 
-		thisActor.deltaRotate(90, new THREE.Vector3(0, 1, 0));
-		thisActor.deltaRotate(90, new THREE.Vector3(1, 0, 0));
+		// Apply the spawn rotation
+		loadedObject.rotateX(thisActor.spawnRotation.x * (Math.PI/180));
+		loadedObject.rotateY(thisActor.spawnRotation.y * (Math.PI/180));
+		loadedObject.rotateZ(thisActor.spawnRotation.z * (Math.PI/180));
+
+		// Apply the spawn offsets
+		loadedObject.translateX(thisActor.spawnOffset.x * thisActor.gameBoard.scaleFactor);
+		loadedObject.translateY(thisActor.spawnOffset.y * thisActor.gameBoard.scaleFactor);
+		loadedObject.translateZ(thisActor.spawnOffset.z * thisActor.gameBoard.scaleFactor);
+
+//		thisActor.deltaRotate(90, new THREE.Vector3(0, 1, 0));
+//		thisActor.deltaRotate(90, new THREE.Vector3(1, 0, 0));
 
 //			thisActor.deltaRotate(45, new THREE.Vector3(1, 0, 0));
 
 			// Orbit the whole thing so it looks like it's coming out of the wall
+			/*
 		if( thisActor.gameBoard.rotationEnabled )
 			thisActor.orbitWorldOrigin(thisActor.gameBoard.rotation);
-
+		*/
+/*
 		if( typeof thisActor.spawnRotation != 'undefined' )
 		{
 			loadedObject.rotation.x = thisActor.spawnRotation.x;
@@ -89,6 +108,7 @@ Actor.prototype.init = function()
 
 			//thisActor.deltaRotate(thisActor.spawnRotation.y, new THREE.Vector3(0, 0, 1));
 		}
+*/
 
 /*
 		if( typeof thisActor.lookAt != 'undefined' )
@@ -97,9 +117,9 @@ Actor.prototype.init = function()
 		}
 */
 
-		loadedObject.translateX(thisActor.spawnX);
-		loadedObject.translateY(-thisActor.spawnY);
-		loadedObject.translateZ(thisActor.spawnZ);
+//		loadedObject.translateX(thisActor.spawnX * thisActor.board.scaleFactor);
+//		loadedObject.translateY(-thisActor.spawnY * thisActor.board.scaleFactor);
+//		loadedObject.translateZ(thisActor.spawnZ * thisActor.board.scaleFactor);
 
 //		thisActor.deltaRotate(5);
 
@@ -122,11 +142,12 @@ Actor.prototype.setGameEvent = function(params)
 function EnemyShip(actor)
 {
 	this.gameBoard = actor.gameBoard;
+	this.maxDist = 500 * this.gameBoard.scaleFactor;	// If you go further away from the player than this, they blow you up, BOOM!
 
 	this.actor = actor;
 	this.actor.team = 1;
 	this.gameBoard.lastSpawnedEnemy = this.gameBoard.tickCount;
-	this.actor.collideRadius = 7.0;
+	this.actor.collideRadius = 20.0;
 
 	this.health = 100;
 	this.damageAmount = 100;
@@ -170,23 +191,62 @@ function EnemyShip(actor)
 	sequenceEntrance0.steps.push(step5);
 
 	var step6 = {};
-	step6.length = 4000;
-	step6.deltaRotate = 2;
-	step6.deltaTranslate = new THREE.Vector3(0, 0, 0);
+	step6.length = 100;
+	step6.deltaRotate = -2;
+	step6.deltaTranslate = new THREE.Vector3(0, 0, 1);
 	sequenceEntrance0.steps.push(step6);
+
+	var step7 = {};
+	step7.length = 0;	// infinite
+	step7.deltaRotate = 0;
+	step7.turning = 0;
+	step7.turnStartTick = 0;
+	step7.turnMaxLength = 80;
+	step7.turnRotation = 0;
+	step7.deltaTranslate = new THREE.Vector3(0, 0, 1);
+	sequenceEntrance0.steps.push(step7);
 
 	sequenceEntrance0.animStart = null;
 
 	var thisShip = this;
 	sequenceEntrance0.onTick = function() {
+		if( !this.actor.sceneObject )
+			return;
+
 		var currentStep = this.steps[this.step];
 		if( this.animStart == -1 )
 			this.animStart = this.gameBoard.tickCount;
 
-		if( this.gameBoard.tickCount - this.animStart <= currentStep.length )
+		if( this.gameBoard.tickCount - this.animStart <= currentStep.length || this.step+1 == this.steps.length )	// Added an infinite behavior at the end of the sequence.
 		{
-			this.actor.deltaRotate(currentStep.deltaRotate);
-			this.actor.sceneObject.translateZ(currentStep.deltaTranslate.z);				
+			this.actor.sceneObject.rotateY((Math.PI / 180) * currentStep.deltaRotate);
+			this.actor.sceneObject.translateX(currentStep.deltaTranslate.x * this.gameBoard.scaleFactor);
+			this.actor.sceneObject.translateY(currentStep.deltaTranslate.y * this.gameBoard.scaleFactor);
+			this.actor.sceneObject.translateZ(currentStep.deltaTranslate.z * this.gameBoard.scaleFactor);
+
+			// If we are on the final step, give it some wondering around behavior
+			if( this.step+1 == this.steps.length )
+			{
+				if( this.gameBoard.tickCount - currentStep.turnStartTick > currentStep.turnMaxLength * (0.7 + Math.random() * 0.3)) 
+				{
+					// Change direction
+					var chance = Math.random();
+					if( chance < 0.4 )
+						currentStep.turning = -1;
+					else if( chance > 0.6 )
+						currentStep.turning = 1;
+					else
+						currentStep.turning = 0;
+
+					var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+					currentStep.turnRotation = Math.random() * 2 * plusOrMinus;
+
+					currentStep.turnStartTick = this.gameBoard.tickCount;
+				}
+			}
+
+			if( currentStep.turnRotation )
+				this.actor.sceneObject.rotateY((Math.PI / 180) * currentStep.turnRotation * (currentStep.turning / 1.0));
 		}
 		else
 		{
@@ -203,6 +263,7 @@ function EnemyShip(actor)
 				console.log("Path has ended!");
 				this.step = 0;
 				thisShip.sequence = null;
+				this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
 			}
 		}
 	};
@@ -299,6 +360,14 @@ EnemyShip.prototype.onTick = function()
 		if( shouldClearGameEvent )
 			this.actor.gameEvent = null;
 	}
+
+	if( this.actor.gameBoard.playerTurret.sceneObject )
+	{
+		var lifeDist = this.actor.sceneObject.position.distanceTo(this.actor.gameBoard.playerTurret.sceneObject.position);
+
+		if( lifeDist > this.maxDist && this.actor.gameEventName != "destroy" )
+			this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+	}
 };
 
 function PlayerTurret(actor)
@@ -384,7 +453,7 @@ PlayerTurret.prototype.onTick = function()
 
 				this.actor.sceneObject.lookAt(this.gameBoard.playerCursorPosition);
 				this.actor.sceneObject.rotation.x = oldPitch;
-				this.actor.sceneObject.rotation.y = -this.actor.sceneObject.rotation.y;
+				this.actor.sceneObject.rotation.y = this.actor.sceneObject.rotation.y;
 				this.actor.sceneObject.rotation.z = oldRoll;
 			}
 		}
@@ -405,18 +474,23 @@ function PlayerLaser(actor)
 	this.actor.team = 0;
 	this.actor.collideRadius = 1.0;
 
+	this.gameBoard = actor.gameBoard;
+
 	this.health = 1;
 	this.damageAmount = 5000;
-	this.maxDist = 200;
-
-	this.gameBoard = actor.gameBoard;
+	this.maxDist = 400;
+	this.maxDist = this.maxDist * this.gameBoard.scaleFactor;
 }
 
 PlayerLaser.prototype.onTick = function()
 {
 	if( !this.actor.gameEvent )
 	{
-		this.actor.sceneObject.translateZ(-2);
+//		this.actor.sceneObject.translateZ(2);
+//		this.actor.deltaRotate(currentStep.deltaRotate);
+//		this.actor.sceneObject.translateX(currentStep.deltaTranslate.x * this.gameBoard.scaleFactor);
+//		this.actor.sceneObject.translateY(currentStep.deltaTranslate.y * this.gameBoard.scaleFactor);
+		this.actor.sceneObject.translateZ(2 * this.gameBoard.scaleFactor);
 
 		var i;
 		var count = 0;
@@ -429,8 +503,9 @@ PlayerLaser.prototype.onTick = function()
 			count++;
 			// Check for collisions.  Note that this is expensive.  It would make more sense for actors that want to detect collisions register themselves with the game board, and it check if any registered objects collide and set game events on them accordingly.
 			var dist = this.actor.sceneObject.position.distanceTo(actor.sceneObject.position);
+			var colDist = (this.actor.collideRadius + actor.collideRadius) * this.actor.gameBoard.scaleFactor;
 
-			if( dist < this.actor.collideRadius + actor.collideRadius )
+			if( dist < colDist )
 			{
 				actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
 				this.actor.setGameEvent({eventName: "damage", amount: actor.ai.damageAmount, priority: 1, stopsSequence: false});
