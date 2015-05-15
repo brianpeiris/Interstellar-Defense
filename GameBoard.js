@@ -22,7 +22,6 @@ function GameBoard()
 	var foundIndex = loc.indexOf("?preset=");
 	if( foundIndex != -1 || !!window.Alt )
 	{
-
 		var preset = (foundIndex == -1) ? "meeting" : loc.substring(foundIndex+8);
 
 		if( preset == "meeting" && !!window.Alt )
@@ -77,6 +76,12 @@ function GameBoard()
 
 	}
 
+	// Init stats
+	this.statKills = 0;
+
+	// Quickly grab some DOM elements
+	this.statKillsElem = document.getElementById("statKills");
+
 	this.controlRight = null;
 	this.controlLeft = null;
 	this.turningAmount = 0;
@@ -99,6 +104,7 @@ function GameBoard()
 	this.fireRate = 30;
 
 	this.delayedFireEvent = null;
+	this.cachedSounds = {};
 
 	/*
 	if(!window.Alt)
@@ -135,6 +141,40 @@ function GameBoard()
 	// Start the simulation
 	this.tick();
 }
+
+GameBoard.prototype.playSound = function(sound_file_name)
+{
+//console.log(typeof this.cachedSounds[sound_file_name]);
+
+	if( typeof this.cachedSounds[sound_file_name] == 'undefined' )
+	{
+		var ext = (new Audio()).canPlayType('audio/mpeg') ? ".mp3" : ".wav";
+		var sound = new Audio(sound_file_name + ext);	
+		this.cachedSounds[sound_file_name] = sound;
+		//console.log(this.cachedSounds[sound_file_name]);
+	}
+
+	var cachedSound = this.cachedSounds[sound_file_name];
+//	cachedSound.play();	// sound disabled because I couldn't hear it.
+};
+
+GameBoard.prototype.changeStat = function(stat_name, stat_amount)
+{
+	var stat = null;
+	var statElem = null;
+
+	if( stat_name == "kills")
+	{
+		this.statKills += stat_amount;
+
+		stat = this.statKills;
+		statElem = this.statKillsElem;
+	}
+	if( !statElem )
+		return;
+
+	statElem.innerText = stat;
+};
 
 GameBoard.prototype.initOffset = function(loadedObject, spawn_offset, spawn_rotation, scale_multiplier)
 {
@@ -276,7 +316,7 @@ GameBoard.prototype.initCursorEvents = function(listener)
 	// FIRE CONTROL
 	if( this.moon )
 	{
-		this.cursorEvents.addEffect(hoverEffect, this.moon);
+//		this.cursorEvents.addEffect(hoverEffect, this.moon);
 		this.cursorEvents.addObject( this.moon );
 
 		if( this.isInAltspace )
@@ -312,8 +352,8 @@ GameBoard.prototype.init = function()
 	}
 	else
 	{
-		this.renderer = new THREE.WebGLRenderer();
-		this.renderer.setClearColor("#AAAAAA");
+		this.renderer = new THREE.WebGLRenderer({alpha: true});
+		//this.renderer.setClearColor("#aaaaaa");
 		this.renderer.setSize( window.innerWidth, window.innerHeight );
 		document.body.appendChild( this.renderer.domElement );
 
@@ -330,7 +370,8 @@ GameBoard.prototype.init = function()
 			this.camera.rotation.z = 0;
 
 			this.camera.translateZ(800);
-			this.camera.translateY(200);			this.camera.position.x = 0;
+			this.camera.translateY(200);
+			this.camera.position.x = 0;
 
 		}
 		else
@@ -398,7 +439,7 @@ GameBoard.prototype.init = function()
 
 	this.rayPlane = new THREE.Mesh( 
 		//new THREE.BoxGeometry(230, 0.25, 300),
-		new THREE.BoxGeometry(500, 0.25, 500),
+		new THREE.BoxGeometry(1000, 0.25, 1000),
 		new THREE.MeshBasicMaterial( { color: "#00ff00", transparent: true, opacity: 0.0 })
 	);
 

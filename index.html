@@ -54,13 +54,29 @@
 				width: 100%;
 				padding: 10px;
 			}
+
+			.scoreBoard
+			{
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				font-size: 50px;
+				font-family: Arial, sans-sarif;
+				font-weight: bold;
+				text-shadow: 2px 2px #000;
+			}
 		</style>
 
 </head>
-<body onselectstart="return false;" ondragstart="return false;">
+<body onselectstart="return false;" ondragstart="return false;" ondoubleclick="return false;">
 
 	<div id="info">
 		Intersteller Defense - 
+	</div>
+
+	<div class="scoreBoard">
+		SHIPS DESTROYED: <div id="statKills">0</id>
 	</div>
 
 	<script src="Actor.js"></script>
@@ -69,7 +85,70 @@
 	<script>
 		var inAltspace = !!window.Alt;
 
-		var board = new GameBoard();
+		var board;
+
+		function initiateGame()
+		{
+ 			board = new GameBoard();
+ 			startGame();
+
+ 			if( !board.isInAltspace )
+			{
+				document.addEventListener("click", function() {
+					board.playerFire();
+				}, false);
+			}
+
+			board.loader.load("models/InterD/defense_grid.obj", function ( loadedObject ) {
+				defenseGridObject = loadedObject;
+
+				board.initOffset(loadedObject, new THREE.Vector3(0, 0, -200), new THREE.Vector3(0, 0, 0), 1.0);
+				board.scene.add(loadedObject);
+
+				CheckAllLoaded(loadedObject);
+			});
+
+/*
+		board.loader.load("models/SolarSystem/mars.obj", function ( loadedObject ) {
+			loadedObject.position.x = board.boardOffset.x;
+			loadedObject.position.y = board.boardOffset.y;
+			loadedObject.position.z = board.boardOffset.z;
+
+			var scale = new THREE.Vector3( board.scaleFactor, board.scaleFactor, board.scaleFactor);
+			if( board.isInAltspace )
+				loadedObject.scale.copy( scale.multiplyScalar(2.0) );
+
+			board.scene.add(loadedObject);
+		});
+*/
+
+			if( board.isInAltspace )
+			{
+				// keep the sun spawned very small to cache the explosion
+				board.loader.load("models/SolarSystem/sun.obj", function ( loadedObject ) {
+					board.initOffset(loadedObject, new THREE.Vector3(-140, 0, -340), new THREE.Vector3(0, 0, 0), 1.0);
+					board.scene.add(loadedObject);
+				});
+
+				board.loader.load("models/SolarSystem/earth.obj", function ( loadedObject ) {
+					board.initOffset(loadedObject, new THREE.Vector3(-140, 0, -340), new THREE.Vector3(0, 0, 0), 2.4);
+					board.scene.add(loadedObject);
+				});
+
+				board.loader.load("models/SolarSystem/moon.obj", function ( loadedObject ) {
+					//board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 1.0);
+					board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 0.25);
+					board.scene.add(loadedObject);
+					board.moon = loadedObject;
+
+					loadedObject.userData.tintColor = new THREE.Color(0, 1, 0);
+
+					CheckAllLoaded(loadedObject);
+				});
+			}
+			else
+				CheckAllLoaded(null);
+		}
 
 		var defenseGridObject = null;
 
@@ -84,6 +163,8 @@
 				board.initCursorEvents(defenseGridObject);
 			}
 		}
+
+setTimeout(function(){ initiateGame(); }, 1000);
 
 		function startGame()
 		{
@@ -109,60 +190,12 @@
 			//setTimeout(function(){ player.sceneObject.translateZ(100); }, 1000);
 		}
 
-		if( !board.isInAltspace )
-		{
-			document.addEventListener("click", function() {
-				board.playerFire();
-			}, false);
-		}
-
-
 //		setTimeout(function(){ setInterval(function(){ board.playerFire(); }, 2000)}, 3000);
 		//setInterval(function(){ board.playerFire(); }, 2000);
 
-		startGame();
+		//startGame();
 
-		board.loader.load("models/InterD/defense_grid.obj", function ( loadedObject ) {
-			defenseGridObject = loadedObject;
 
-			board.initOffset(loadedObject, new THREE.Vector3(0, 0, -200), new THREE.Vector3(0, 0, 0), 1.0);
-			board.scene.add(loadedObject);
-
-			CheckAllLoaded(loadedObject);
-		});
-
-/*
-		board.loader.load("models/SolarSystem/mars.obj", function ( loadedObject ) {
-			loadedObject.position.x = board.boardOffset.x;
-			loadedObject.position.y = board.boardOffset.y;
-			loadedObject.position.z = board.boardOffset.z;
-
-			var scale = new THREE.Vector3( board.scaleFactor, board.scaleFactor, board.scaleFactor);
-			if( board.isInAltspace )
-				loadedObject.scale.copy( scale.multiplyScalar(2.0) );
-
-			board.scene.add(loadedObject);
-		});
-*/
-
-		if( board.isInAltspace )
-		{
-			board.loader.load("models/SolarSystem/sun.obj", function ( loadedObject ) {
-				board.initOffset(loadedObject, new THREE.Vector3(-140, 0, -340), new THREE.Vector3(0, 0, 0), 3.0);
-				board.scene.add(loadedObject);
-			});
-
-			board.loader.load("models/SolarSystem/moon.obj", function ( loadedObject ) {
-				//board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 1.0);
-				board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 0.25);
-				board.scene.add(loadedObject);
-				board.moon = loadedObject;
-
-				CheckAllLoaded(loadedObject);
-			});
-		}
-		else
-			CheckAllLoaded(null);
 
 		/*
 

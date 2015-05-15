@@ -3,6 +3,7 @@ function Actor(params)
 	this.spawnMatrix = null;
 	this.spawnOffset = null;
 	this.spawnRotation = null;
+	this.spawnScale = 1.0;
 
 	if( typeof params.offset != 'undefined' )
 		this.spawnOffset = params.offset;
@@ -16,6 +17,9 @@ function Actor(params)
 
 	if( typeof params.matrix != 'undefined' )
 		this.spawnMatrix = params.matrix;
+
+	if( typeof params.scale != 'undefined' )
+		this.spawnScale = params.scale;
 
 	this.gameBoard = params.gameBoard;
 	this.modelName = params.modelName;
@@ -40,6 +44,9 @@ Actor.prototype.onTick = function()
 
 Actor.prototype.destroy = function()
 {
+	if( this.ai && typeof this.ai != 'undefined' && typeof this.ai.onDestroy != 'undefined' )
+		this.ai.onDestroy();
+
 	this.gameBoard.scene.remove(this.sceneObject);
 };
 
@@ -67,7 +74,18 @@ Actor.prototype.init = function()
 
 		// If there is a matrix to clone, apply it first
 		if( thisActor.spawnMatrix )
+		{
+			loadedObject.position.x = 0;
+			loadedObject.position.y = 0;
+			loadedObject.position.z = 0;
+
+			loadedObject.rotation.x = 0;
+			loadedObject.rotation.y = 0;
+			loadedObject.rotation.z = 0;
+
+			loadedObject.updateMatrix();
 			loadedObject.applyMatrix(thisActor.spawnMatrix);
+		}
 		else
 		{
 			// Otherwise we still need to apply the board offset
@@ -135,11 +153,20 @@ Actor.prototype.init = function()
 //		thisActor.deltaRotate(5);
 
 		var scale = new THREE.Vector3( thisActor.gameBoard.scaleFactor, thisActor.gameBoard.scaleFactor, thisActor.gameBoard.scaleFactor);
+		scale = scale.multiplyScalar(thisActor.spawnScale);
 
 		if( thisActor.gameBoard.isInAltspace )
-			loadedObject.scale.copy( scale );
+		{
+			loadedObject.updateMatrix();
+			loadedObject.scale.copy( scale.multiplyScalar(thisActor.spawnScale) );
+		}
 
 		thisActor.gameBoard.scene.add(loadedObject);
+
+//		loadedObject.userData.tintColor = new THREE.Color(0.5, 0, 0);
+
+//		thisActor.gameBoard.scene.add(loadedObject);
+
 //		thisActor.gameBoard.cursorEvents.addObject(loadedObject);
 
 		// FIXME Hacky way to check if all player control objects are loaded
@@ -167,8 +194,15 @@ function EnemyShip(actor)
 	this.gameBoard.lastSpawnedEnemy = this.gameBoard.tickCount;
 	this.actor.collideRadius = 20.0;
 
+	this.lifeMaxZOffset = 20;
+
 	this.health = 100;
 	this.damageAmount = 100;
+
+	this.dieSoundFile = "sounds/drippy";
+
+	this.trailRate = 10;
+	this.lastTrailTick = 0;
 
 	this.sequence = null;
 	this.sequences = {};
@@ -296,6 +330,12 @@ EnemyShip.prototype.onTick = function()
 		{
 			this.sequence.onTick();
 		}
+
+		/*
+		var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/ship_trail.obj", offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Vector3(90, 0, 0), scale: 1.0, matrix: this.actor.sceneObject.matrix};
+		var trail = this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
+		trail.sceneObject.updateMatrix();
+		*/
 	}
 	else
 	{
@@ -320,6 +360,9 @@ EnemyShip.prototype.onTick = function()
 				{
 					shouldClearGameEvent = false;
 					this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+
+					// Increment the stats
+					this.actor.gameBoard.changeStat("kills", 1);
 				}
 				else
 				{
@@ -367,7 +410,28 @@ EnemyShip.prototype.onTick = function()
 
 		if( lifeDist > this.maxDist && this.actor.gameEventName != "destroy" )
 			this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+
+		// Now check min-z
+		var turret = this.actor.gameBoard.playerTurret;
+		if( this.actor.sceneObject.position.z > turret.sceneObject.position.z + this.lifeMaxZOffset )
+			this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+//		var absolutePosition = turret.sceneObject.localToWorld(turret.sceneObject.position);
+/*
+		this.actor.gameBoard.scene.updateMatrixWorld();
+		var absolutePosition = new THREE.Vector3();
+		absolutePosition.setFromMatrixPosition( this.actor.gameBoard.playerTurret.sceneObject.matrixWorld );
+*/
+		//console.log(absolutePosition.z);
+		//console.log(this.actor.sceneObject.position.z);
 	}
+};
+
+EnemyShip.prototype.onDestroy = function()
+{
+	var explosionTemplate = {aiClassName: "Explosion", modelName: "models/SolarSystem/sun.obj", offset: new THREE.Vector3(0, 0, 0), scale: 0.5, matrix: this.actor.sceneObject.matrix};
+	this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
+
+	this.actor.gameBoard.playSound(this.dieSoundFile);
 };
 
 function PlayerTurret(actor)
@@ -375,6 +439,8 @@ function PlayerTurret(actor)
 	this.actor = actor;
 	this.actor.team = 0;
 	this.collideRadius = 20.0;
+
+	this.fireSoundFile = "sounds/drippy";
 
 	//this.sceneObject = actor.sceneObject;	// doesn't work for some reason
 	this.gameBoard = actor.gameBoard;
@@ -607,4 +673,70 @@ function ControlLeft(actor)
 ControlLeft.prototype.onTick = function()
 {
 
+};
+
+function Explosion(actor)
+{
+	this.actor = actor;
+	this.actor.team = 0;
+	this.actor.collideRadius = 1.0;
+
+	this.gameBoard = actor.gameBoard;
+
+	// This class could be expanded to have customizable attributes here for various sizes and types of explosions. (Maybe they can be passed into the explode message)
+	this.speedUp = 0.2;
+	this.speedDown = 0.1;
+	this.startScale = 0.5;
+	this.maxScale = 2.5;
+	this.minScale = 0.5;
+
+	this.currentScale = this.startScale;
+	this.exploding = 0;
+}
+
+Explosion.prototype.explode = function()
+{
+	if( this.exploding != 0 )
+		return;
+
+	this.exploding = 1;
+};
+
+Explosion.prototype.onTick = function()
+{
+	if( this.exploding == 0 )
+		return;
+
+	this.actor.sceneObject.rotateX(5);
+
+	if( this.exploding == 1)
+	{
+		if( this.currentScale < this.maxScale )
+		{
+			this.currentScale += this.speedUp;
+
+			var scale = new THREE.Vector3( this.actor.gameBoard.scaleFactor, this.actor.gameBoard.scaleFactor, this.actor.gameBoard.scaleFactor);
+			if( this.actor.gameBoard.isInAltspace )
+			{
+				this.actor.sceneObject.scale.copy( scale.multiplyScalar(this.currentScale).multiplyScalar(this.actor.spawnScale) );
+			}
+		}
+		else
+			this.exploding = -1;
+	}
+	else if( this.exploding == -1 )
+	{
+		if (this.currentScale > this.minScale )
+		{
+			this.currentScale -= this.speedDown;
+
+			var scale = new THREE.Vector3( this.actor.gameBoard.scaleFactor, this.actor.gameBoard.scaleFactor, this.actor.gameBoard.scaleFactor);
+			if( this.actor.gameBoard.isInAltspace )
+			{
+				this.actor.sceneObject.scale.copy( scale.multiplyScalar(this.currentScale).multiplyScalar(this.actor.spawnScale) );
+			}
+		}
+		else
+			this.actor.gameBoard.removeActor(this.actor);
+	}
 };

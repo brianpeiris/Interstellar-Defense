@@ -1,12 +1,4 @@
-# 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
-# File Created: 14.05.2015 14:53:14
-
-newmtl wire_227153153
-	Ns 32
-	d 1
-	Tr 0
-	Tf 1 1 1
-	illum 2
-	Ka 0.8902 0.6000 0.6000
-	Kd 0.8902 0.6000 0.6000
-	Ks 0.3500 0.3500 0.3500
+newmtl 23___Default
+Kd 1 1 1
+illum 0
+map_Kd turret.jpg
