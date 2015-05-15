@@ -77,6 +77,18 @@ Actor.prototype.init = function()
 			loadedObject.rotation.x = 0;
 			loadedObject.rotation.y = 0;
 			loadedObject.rotation.z = 0;
+			//loadedObject.updateMatrix();
+
+			loadedObject.updateMatrix();
+			thisActor.gameBoard.orbitObjectAboutWorldOrigin(loadedObject, thisActor.gameBoard.rotationAmount.x);
+			loadedObject.updateMatrix();
+
+			//loadedObject.updateMatrix();
+			//thisActor.gameBoard.orbitObjectAboutWorldOrigin(loadedObject, thisActor.gameBoard.rotationAmount.y, new THREE.Vector3(0, 1, 0);
+
+			//loadedObject.updateMatrix();
+			//thisActor.gameBoard.orbitObjectAboutWorldOrigin(loadedObject, thisActor.gameBoard.rotationAmount.z, new THREE.Vector3(0, 0, 1));
+			//loadedObject.updateMatrix();
 		}
 
 		// Apply the spawn rotation
@@ -105,7 +117,6 @@ Actor.prototype.init = function()
 			loadedObject.rotation.x = thisActor.spawnRotation.x;
 			loadedObject.rotation.y = thisActor.spawnRotation.y;
 			loadedObject.rotation.z = thisActor.spawnRotation.z;
-
 			//thisActor.deltaRotate(thisActor.spawnRotation.y, new THREE.Vector3(0, 0, 1));
 		}
 */
@@ -130,6 +141,13 @@ Actor.prototype.init = function()
 
 		thisActor.gameBoard.scene.add(loadedObject);
 //		thisActor.gameBoard.cursorEvents.addObject(loadedObject);
+
+		// FIXME Hacky way to check if all player control objects are loaded
+		if( thisActor.aiClassName == "ControlLeft" || thisActor.aiClassName == "ControlRight" || thisActor.aiClassName == "PlayerTurret" )
+		{
+//			console.log(thisActor.aiClassName);
+			CheckAllLoaded(loadedObject);
+		}
 	});
 };
 
@@ -155,61 +173,31 @@ function EnemyShip(actor)
 	this.sequence = null;
 	this.sequences = {};
 
-	var sequenceEntrance0 = {};
-	sequenceEntrance0.name = "entrance0";
-	sequenceEntrance0.step = null;
-	sequenceEntrance0.steps = new Array();
+	var sequenceEntrance = {name: "entrance", step: null, steps: new Array()};
 
-	var step0 = {};
-	step0.length = 100;
-	step0.deltaRotate = 0;
-	step0.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step0);
+	// Dive bomb A
+	sequenceEntrance.steps.push({label: "alpha", length: 130, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 0
+	sequenceEntrance.steps.push({length: 150, deltaRotate: 2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 1
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 2
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 3
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 4
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 5
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 6
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1), turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 7
 
-	var step1 = {};
-	step1.length = 150;
-	step1.deltaRotate = 2;
-	step1.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step1);
+	// Dive bomb B
+	sequenceEntrance.steps.push({label: "beta", length: 130, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 150, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});	// step 8
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2)});	// step 9
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 10
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 3, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 11
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 12
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1), turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 13
 
-	var step3 = {};
-	step3.length = 100;
-	step3.deltaRotate = 0;
-	step3.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step3);
-
-	var step4 = {};
-	step4.length = 100;
-	step4.deltaRotate = -2;
-	step4.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step4);
-
-	var step5 = {};
-	step5.length = 100;
-	step5.deltaRotate = 0;
-	step5.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step5);
-
-	var step6 = {};
-	step6.length = 100;
-	step6.deltaRotate = -2;
-	step6.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step6);
-
-	var step7 = {};
-	step7.length = 0;	// infinite
-	step7.deltaRotate = 0;
-	step7.turning = 0;
-	step7.turnStartTick = 0;
-	step7.turnMaxLength = 80;
-	step7.turnRotation = 0;
-	step7.deltaTranslate = new THREE.Vector3(0, 0, 1);
-	sequenceEntrance0.steps.push(step7);
-
-	sequenceEntrance0.animStart = null;
+	sequenceEntrance.animStart = null;
 
 	var thisShip = this;
-	sequenceEntrance0.onTick = function() {
+	sequenceEntrance.onTick = function() {
 		if( !this.actor.sceneObject )
 			return;
 
@@ -217,16 +205,17 @@ function EnemyShip(actor)
 		if( this.animStart == -1 )
 			this.animStart = this.gameBoard.tickCount;
 
-		if( this.gameBoard.tickCount - this.animStart <= currentStep.length || this.step+1 == this.steps.length )	// Added an infinite behavior at the end of the sequence.
+		if( this.gameBoard.tickCount - this.animStart <= currentStep.length || currentStep.length < 1 )	// Added an infinite behavior at the end of the sequence.
 		{
 			this.actor.sceneObject.rotateY((Math.PI / 180) * currentStep.deltaRotate);
 			this.actor.sceneObject.translateX(currentStep.deltaTranslate.x * this.gameBoard.scaleFactor);
 			this.actor.sceneObject.translateY(currentStep.deltaTranslate.y * this.gameBoard.scaleFactor);
 			this.actor.sceneObject.translateZ(currentStep.deltaTranslate.z * this.gameBoard.scaleFactor);
 
-			// If we are on the final step, give it some wondering around behavior
-			if( this.step+1 == this.steps.length )
+			if( currentStep.length < 1 )
 			{
+				// If we are on the final step, give it some wondering around behavior
+
 				if( this.gameBoard.tickCount - currentStep.turnStartTick > currentStep.turnMaxLength * (0.7 + Math.random() * 0.3)) 
 				{
 					// Change direction
@@ -268,21 +257,32 @@ function EnemyShip(actor)
 		}
 	};
 
-	sequenceEntrance0.actor = this.actor;
-	sequenceEntrance0.gameBoard = this.gameBoard;
-	this.sequences[sequenceEntrance0.name] = sequenceEntrance0;
+	sequenceEntrance.actor = this.actor;
+	sequenceEntrance.gameBoard = this.gameBoard;
+	this.sequences[sequenceEntrance.name] = sequenceEntrance;
 }
 
-EnemyShip.prototype.playSequence = function(sequence_name, sequence_step)
+EnemyShip.prototype.playSequence = function(sequence_name, sequence_label)
 {
 	var sequence = this.sequences[sequence_name];
 	if( sequence )
 	{
-		if( typeof sequence_step == 'undefined' )
-			sequence.step = 0;
-		else
-			sequence.step = sequence_step;
+		var sequenceStep = 0;
 
+		if( typeof sequence_label == 'string' )
+		{
+			var i;
+			for( i = 0; i < sequence.steps.length; i++ )
+			{
+				if( typeof sequence.steps[i].label != 'undefined' && sequence.steps[i].label == sequence_label )
+				{
+					sequenceStep = i;
+					break;
+				}
+			}
+		}
+
+		sequence.step = sequenceStep;
 		sequence.animStart = -1;
 		this.sequence = sequence;
 	}
@@ -433,14 +433,45 @@ function PlayerTurret(actor)
 	this.sequences[sequenceEntrance0.name] = sequenceEntrance0;
 }
 
+PlayerTurret.prototype.doFire = function(fireEvent)
+{
+	var i;
+	for( i = 0; i < fireEvent.projectiles.length; i++ )
+	{
+		this.actor.gameBoard.spawnActor(fireEvent.projectiles[i]);
+	}
+
+	this.actor.gameBoard.delayedFireEvent = null;
+};
+
 PlayerTurret.prototype.onTick = function()
 {
 	if( !this.actor.gameEvent )
 	{
-		if( this.sequence && this.sequence.onTick )
+		if( this.actor.gameBoard.turningDirection != 0 )
+			this.actor.gameBoard.turningAmount += 0.01 * this.actor.gameBoard.turningDirection;
+		else
 		{
-			this.sequence.onTick();
+			 if( this.actor.gameBoard.turningAmount > 0.5 )
+				this.actor.gameBoard.turningAmount -= 0.05;
+			else  if( this.actor.gameBoard.turningAmount < -0.5 )
+				this.actor.gameBoard.turningAmount += 0.05;
+			else
+			{
+				this.actor.gameBoard.turningAmount = 0;
+				var delayedFireEvent = this.actor.gameBoard.delayedFireEvent;
+
+//				if( delayedFireEvent )
+//					console.log(delayedFireEvent);
+
+				if( delayedFireEvent )
+				{
+					this.doFire();
+				}
+			}
 		}
+
+		this.actor.sceneObject.rotateY(-this.actor.gameBoard.turningAmount * (Math.PI/180));
 	}
 	else
 	{
@@ -455,6 +486,14 @@ PlayerTurret.prototype.onTick = function()
 				this.actor.sceneObject.rotation.x = oldPitch;
 				this.actor.sceneObject.rotation.y = this.actor.sceneObject.rotation.y;
 				this.actor.sceneObject.rotation.z = oldRoll;
+			}
+			else if( this.actor.gameEvent.eventName == "fire" )
+			{
+
+				if( this.actor.gameBoard.turningAmount != 0 )
+					this.actor.gameBoard.delayedFireEvent = this.actor.gameEvent; // FIXME Hacky way to wait until the cannon stops before the cannon shoots.  Not multiplayer-friendly!  Should just fire the projectiles now.
+				else
+					this.doFire(this.actor.gameEvent);
 			}
 		}
 
@@ -548,4 +587,24 @@ PlayerLaser.prototype.onTick = function()
 
 	if( lifeDist > this.maxDist && this.actor.gameEventName != "destroy" )
 		this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+};
+
+function ControlLeft(actor)
+{
+	this.actor = actor;
+	this.actor.team = 0;
+	this.actor.collideRadius = 10;	// not needed for this actor type??
+
+	this.gameBoard = actor.gameBoard;
+
+	// not needed for this actor type??
+	this.health = 1;
+	this.damageAmount = 5000;
+	this.maxDist = 400;
+	this.maxDist = this.maxDist * this.gameBoard.scaleFactor;
+}
+
+ControlLeft.prototype.onTick = function()
+{
+
 };
