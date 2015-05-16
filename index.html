@@ -38,7 +38,7 @@
 		<style>
 			body {
 				background-color: rgba(0, 0, 0, 0);
-				background-image: url('starfield2.jpg');
+//				background-image: url('starfield2.jpg');
 				background-size: cover;
 				margin: 0px;
 				overflow: hidden;
@@ -58,10 +58,11 @@
 			.scoreBoard
 			{
 				position: fixed;
-				top: 0;
+				//top: 400px;
+				bottom: 0;
 				left: 0;
-				right: 0;
-				font-size: 50px;
+//				right: 0;
+				font-size: 20px;
 				font-family: Arial, sans-sarif;
 				font-weight: bold;
 				text-shadow: 2px 2px #000;
@@ -72,11 +73,11 @@
 <body onselectstart="return false;" ondragstart="return false;" ondoubleclick="return false;">
 
 	<div id="info">
-		Intersteller Defense - 
+		Intersteller Defense
 	</div>
 
 	<div class="scoreBoard">
-		SHIPS DESTROYED: <div id="statKills">0</id>
+		SHIPS DESTROYED: <div id="statKills" style="display: inline-block;">0</id>
 	</div>
 
 	<script src="Actor.js"></script>
@@ -84,13 +85,24 @@
 
 	<script>
 		var inAltspace = !!window.Alt;
+		var defenseGridObject = null;
+
+		if( inAltspace )
+		{
+			window.addEventListener("AltContentLoaded", function() {
+				initiateGame();
+			});
+		}
+		else
+		{
+			document.body.style.backgroundImage = "url('starfield2.jpg')";
+			setTimeout(function(){ initiateGame(); }, 1000);
+		}
 
 		var board;
-
 		function initiateGame()
 		{
  			board = new GameBoard();
- 			startGame();
 
  			if( !board.isInAltspace )
 			{
@@ -98,121 +110,7 @@
 					board.playerFire();
 				}, false);
 			}
-
-			board.loader.load("models/InterD/defense_grid.obj", function ( loadedObject ) {
-				defenseGridObject = loadedObject;
-
-				board.initOffset(loadedObject, new THREE.Vector3(0, 0, -200), new THREE.Vector3(0, 0, 0), 1.0);
-				board.scene.add(loadedObject);
-
-				CheckAllLoaded(loadedObject);
-			});
-
-/*
-		board.loader.load("models/SolarSystem/mars.obj", function ( loadedObject ) {
-			loadedObject.position.x = board.boardOffset.x;
-			loadedObject.position.y = board.boardOffset.y;
-			loadedObject.position.z = board.boardOffset.z;
-
-			var scale = new THREE.Vector3( board.scaleFactor, board.scaleFactor, board.scaleFactor);
-			if( board.isInAltspace )
-				loadedObject.scale.copy( scale.multiplyScalar(2.0) );
-
-			board.scene.add(loadedObject);
-		});
-*/
-
-			if( board.isInAltspace )
-			{
-				// keep the sun spawned very small to cache the explosion
-				board.loader.load("models/SolarSystem/sun.obj", function ( loadedObject ) {
-					board.initOffset(loadedObject, new THREE.Vector3(-140, 0, -340), new THREE.Vector3(0, 0, 0), 1.0);
-					board.scene.add(loadedObject);
-				});
-
-				board.loader.load("models/SolarSystem/earth.obj", function ( loadedObject ) {
-					board.initOffset(loadedObject, new THREE.Vector3(-140, 0, -340), new THREE.Vector3(0, 0, 0), 2.4);
-					board.scene.add(loadedObject);
-				});
-
-				board.loader.load("models/SolarSystem/moon.obj", function ( loadedObject ) {
-					//board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 1.0);
-					board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 0.25);
-					board.scene.add(loadedObject);
-					board.moon = loadedObject;
-
-					loadedObject.userData.tintColor = new THREE.Color(0, 1, 0);
-
-					CheckAllLoaded(loadedObject);
-				});
-			}
-			else
-				CheckAllLoaded(null);
 		}
-
-		var defenseGridObject = null;
-
-		var loadCount = 0;
-		var numToLoad = 5;
-		function CheckAllLoaded(loadedObject)
-		{
-			loadCount++;
-
-			if( defenseGridObject && loadCount == numToLoad)
-			{
-				board.initCursorEvents(defenseGridObject);
-			}
-		}
-
-setTimeout(function(){ initiateGame(); }, 1000);
-
-		function startGame()
-		{
-			//board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-80, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance", "alpha");
-			//board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-40, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
-			//board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(0, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
-			//board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(40, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
-			//board.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(80, 0, -380), rotation: new THREE.Vector3(0, 0, 0)}).ai.playSequence("entrance0");
-
-			var playerParams = {aiClassName: "PlayerTurret", modelName: "models/InterD/player_turret.obj", offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Vector3(0, 180, 0)};
-			var player = board.spawnActor(playerParams);
-			board.playerTurret = player;
-
-			var controlRightParams = {aiClassName: "ControlLeft", modelName: "models/InterD/control_arrow.obj", offset: new THREE.Vector3(0, -10, 60), rotation: new THREE.Vector3(0, 90, 0)};
-			var controlRight = board.spawnActor(controlRightParams);
-			board.controlRight = controlRight;
-
-			var controlLeftParams = {aiClassName: "ControlLeft", modelName: "models/InterD/control_arrow.obj", offset: new THREE.Vector3(0, -10, 60), rotation: new THREE.Vector3(0, -90, 0)};
-			var controlLeft = board.spawnActor(controlLeftParams);
-			board.controlLeft = controlLeft;
-
-			//board.setHoloCursorMoveListener(player);
-			//setTimeout(function(){ player.sceneObject.translateZ(100); }, 1000);
-		}
-
-//		setTimeout(function(){ setInterval(function(){ board.playerFire(); }, 2000)}, 3000);
-		//setInterval(function(){ board.playerFire(); }, 2000);
-
-		//startGame();
-
-
-
-		/*
-
-		board.loader.load("models/InterD/player_turret.obj", function ( loadedObject ) {
-			loadedObject.position.x = board.boardOffset.x;
-			loadedObject.position.y = board.boardOffset.y;
-			loadedObject.position.z = board.boardOffset.z;
-
-			var scale = new THREE.Vector3( board.scaleFactor, board.scaleFactor, board.scaleFactor);
-			if( board.isInAltspace )
-				loadedObject.scale.copy( scale );
-
-			board.scene.add(loadedObject);
-		});
-*/
-
-		//setTimeout(function(){board.reset(false); startGame();}, 10000);
 	</script>
 
 </body>
