@@ -23,6 +23,10 @@ function GameBoard()
 		this.heightOffset = 0;
 
 		// Default preset for Altspace
+		//this.rotationAmount = new THREE.Vector3(40, 0, 0);
+		//this.boardOffset = new THREE.Vector3(0, -230, 100);	//0 -50 308
+		//this.scaleFactor = 2.0;
+
 		this.rotationAmount = new THREE.Vector3(40, 0, 0);
 		this.boardOffset = new THREE.Vector3(0, -230, 100);	//0 -50 308
 		this.scaleFactor = 2.0;
@@ -35,75 +39,116 @@ function GameBoard()
 		this.scaleFactor = 1.0;
 	}
 
-	var loc = document.location.href;
-	var foundIndex = loc.indexOf("?preset=");
-	if( foundIndex != -1 || !!window.Alt )
-	{
-		var preset = (foundIndex == -1) ? "gaming" : loc.substring(foundIndex+8);
+	var personal = (window.innerDepth == 300);
 
-		if( preset == "meeting" && !!window.Alt )
-		{
-			this.rotationAmount = new THREE.Vector3(50, 0, 0);
-			this.boardOffset = new THREE.Vector3(10, -200, 300);
-			this.scaleFactor = 3.0;
+	var preset = getParameterByName("preset");
+	if( preset == "" )
+		preset = "gaming";
+
+	// If we are in Altspace, try to determine which presets to use based on window inner dimensions
+	/*
+	if( !!window.Alt && !personal )
+	{
+		// Highrise Patio
+		if( window.innerDepth == 1024 && window.innerWidth == 819 && window.innerHeight == 819 )	(sometimes 1024x1024)
+	}
+	*/
+
+	if( preset == "meeting" && !!window.Alt && !personal)
+	{
+		this.rotationAmount = new THREE.Vector3(50, 0, 0);
+		this.boardOffset = new THREE.Vector3(10, -200, 300);
+		this.scaleFactor = 3.0;
 
 			/*
 			this.rotationAmount = new THREE.Vector3(20, 0, 0);
 			this.boardOffset = new THREE.Vector3(10, -140, 540);
 			this.scaleFactor = 4.0;
 			*/
-		}
-			else if( preset == "meeting2" && !!window.Alt )
-		{
-			this.rotationAmount = new THREE.Vector3(20, 0, 0);
-			this.boardOffset = new THREE.Vector3(0, 0, 225);
-			this.scaleFactor = 4.0;
-		}
-		else if( preset == "meeting3" && !!window.Alt )
-		{
-			this.rotationAmount = new THREE.Vector3(0, 0, 0);
-			this.boardOffset = new THREE.Vector3(0, 0, 0);
-			this.scaleFactor = 4.0;
-		}
-		else if( preset == "tea" && !!window.Alt )
-		{
-			this.rotationAmount = new THREE.Vector3(40, 0, 0);
-			this.boardOffset = new THREE.Vector3(-160, -80, 330);
-			this.scaleFactor = 4.0;
-		}
-		else if( preset == "gaming" && !!window.Alt )
-		{
+	}
+	else if( preset == "meeting2" && !!window.Alt && !personal)
+	{
+		this.rotationAmount = new THREE.Vector3(20, 0, 0);
+		this.boardOffset = new THREE.Vector3(0, 0, 225);
+		this.scaleFactor = 4.0;
+	}
+	else if( preset == "meeting3" && !!window.Alt && !personal )
+	{
+		this.rotationAmount = new THREE.Vector3(0, 0, 0);
+		this.boardOffset = new THREE.Vector3(0, 0, 0);
+		this.scaleFactor = 4.0;
+	}
+	else if( preset == "tea" && !!window.Alt && !personal )
+	{
+		this.rotationAmount = new THREE.Vector3(40, 0, 0);
+		this.boardOffset = new THREE.Vector3(-160, -80, 330);
+		this.scaleFactor = 4.0;
+	}
+	else if( preset == "gaming" && !!window.Alt && !personal )
+	{
 			/*
 			this.rotationAmount = new THREE.Vector3(30, 0, 0);
 			this.boardOffset = new THREE.Vector3(0, -115, 30);	//0 -50 308
 			this.scaleFactor = 1.0;
 			*/
 
-			this.rotationAmount = new THREE.Vector3(40, 0, 0);
-			this.boardOffset = new THREE.Vector3(0, -230, 100);	//0 -50 308
-			this.scaleFactor = 2.0;
+		this.rotationAmount = new THREE.Vector3(40, 0, 0);
+		this.boardOffset = new THREE.Vector3(0, -230, 100);	//0 -50 308
+		this.scaleFactor = 2.0;
 
 		/* IRL invasion
 			this.rotationAmount = new THREE.Vector3(20, 0, 0);
 			this.boardOffset = new THREE.Vector3(200, -50, -150);
 			this.scaleFactor = 10.0;
 		*/
-		}
-		else if( preset == "high" && !!window.Alt )
-		{
-			this.rotationAmount = new THREE.Vector3(30, 0, 0);
-			this.boardOffset = new THREE.Vector3(0, -50, 308);	//0 -50 308
-			this.scaleFactor = 5.0;
-		}
-		else if( preset == "topdown" )
-		{
-			this.rotationAmount = new THREE.Vector3(0, 0, 0);
-			this.boardOffset = new THREE.Vector3(0, 0, 0);
-			this.scaleFactor = 1.0;
-			this.isTopDownMode = true;
-		}
-
 	}
+	else if( preset == "high" && !!window.Alt && !personal )
+	{
+		this.rotationAmount = new THREE.Vector3(30, 0, 0);
+		this.boardOffset = new THREE.Vector3(0, -50, 308);	//0 -50 308
+		this.scaleFactor = 5.0;
+	}
+	else if( preset == "topdown" )
+	{
+		if( !!window.Alt )
+		{
+			if( !personal )
+			{
+				this.rotationAmount = new THREE.Vector3(0, 0, 0);
+				this.boardOffset = new THREE.Vector3(0, 0, 0);
+				this.scaleFactor = 1.0;
+				//this.isTopDownMode = true;
+			}
+			else
+			{
+				this.rotationAmount = new THREE.Vector3(90, 0, 0);
+				this.boardOffset = new THREE.Vector3(0, -150, 20);
+				this.scaleFactor = 2.0;
+
+//				document.body.style.backgroundImage = "url('starfield2.jpg')";
+			}
+		}
+		else
+		{
+			this.rotationAmount = new THREE.Vector3(90, 0, 0);
+			this.boardOffset = new THREE.Vector3(0, -150, 0);
+			this.scaleFactor = 2.0;
+			//this.isTopDownMode = true;
+		}
+	}
+	else if( !!window.Alt && personal )
+	{
+		this.rotationAmount = new THREE.Vector3(30, 0, 0);
+		this.boardOffset = new THREE.Vector3(0, -50, -100);	//0 -50 308
+		this.scaleFactor = 9.0;
+	}
+
+	this.nextStateName = null;
+	this.pendingStateChange = false;
+
+	this.alertSlateElem = null;
+	this.alertMessage = null;
+	this.alertDuration = 0;
 
 	// Init stats
 	this.statKills = 0;
@@ -168,7 +213,7 @@ function GameBoard()
 	this.ambient = null;
 
 	var board = this;
-	this.loader.load("models/SolarSystem/moon.obj", function ( loadedObject ) {
+	this.loader.load("models/InterD/crosshair.obj", function ( loadedObject ) {
 		board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 0.25);
 		board.scene.add(loadedObject);
 		board.crosshair = loadedObject;
@@ -182,6 +227,25 @@ function GameBoard()
 		board.tick();
 	});
 }
+
+GameBoard.prototype.showAlert = function(alert_message)
+{
+	var alertMessage = alert_message;
+
+	if( !this.alertSlateElem )
+		this.alertSlateElem = document.getElementById("alertSlate");
+
+	this.alertDuration = 120;
+	if( typeof alertMessage.duration != 'undefined' )
+		this.alertDuration = alertMessage.duration;
+
+
+	// If there is currently a message being shown, it should be faded out....
+	// DO WORK
+
+	this.alertSlateElem.innerHTML = alertMessage.text;
+	this.alertSlateElem.style.opacity = 1.0;
+};
 
 GameBoard.prototype.instance = function(model_file_name)
 {
@@ -255,7 +319,13 @@ GameBoard.prototype.changeStat = function(stat_name, stat_amount)
 
 		stat = this.statKills;
 		statElem = this.statKillsElem;
+
+		if( stat == 0 )
+			document.getElementById("scoreBoard").style.display = "none";
+		else
+			document.getElementById("scoreBoard").style.display = "block";
 	}
+
 	if( !statElem )
 		return;
 
@@ -549,12 +619,47 @@ GameBoard.prototype.init = function()
 	this.scene.add(this.rayPlane);
 
 	// Set the state to load everything needed for stage 1
-	this.setState("load_stage1");
+	this.setState("load_earthArrival");
+};
+
+GameBoard.prototype.removeAllActors = function(target_class_names)
+{
+	var targetClassNames;
+	if( typeof target_class_names != 'undefined' )
+		targetClassNames = target_class_names;
+	else
+		targetClassNames = ["EnemyShip", "PlayerLaser"];
+
+	var i;
+	var j;
+	for( i = 0; i < this.actors.length; i++ )
+	{
+		for( j = 0; j < targetClassNames.length; j++ )
+		{
+			if( this.actors[i].ai.constructor.name == targetClassNames[j] )
+			{
+				//this.actors[i].setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+				this.removeActor(this.actors[i]);
+
+				i = i-1;
+				break;
+			}
+		}
+	}
 };
 
 GameBoard.prototype.setState = function(stateName)
 {
-	if( stateName == "load_stage1" )
+ 	this.nextStateName = stateName;
+};
+
+GameBoard.prototype.setStateDelayed = function(stateName)
+{
+	this.nextStateName = null;
+
+	this.lastFiredTick = this.tickCount + 100;
+
+	if( stateName == "load_earthArrival" )
 	{
 		// FIXME This is where previous states should be cleaned up? (if the previous state wasn't the same one minus the loading: true)
 
@@ -569,25 +674,25 @@ GameBoard.prototype.setState = function(stateName)
 //	});
 
 		// First set the state
-		this.state = {id: stateName, aimingEnabled: false, loading: true, caching: 10};	// 10 models/sounds to pre-cache...
+		this.state = {id: stateName, aimingEnabled: false, loading: true, caching: 11};	// 11 models/sounds to pre-cache...
 
 		// Now start pre-caching models
 		//this.precacheModel("models/InterD/defense_grid.obj");
+		this.precacheModel("models/InterD/ship_trail.obj");
 		this.precacheModel("models/InterD/player_turret.obj");
 		this.precacheModel("models/InterD/player_laser.obj");
 		this.precacheModel("models/InterD/enemy_ship.obj");
-		this.precacheModel("models/SolarSystem/sun.obj");
+		this.precacheModel("models/InterD/explosion.obj");
 		this.precacheModel("models/SolarSystem/earth.obj");
-		this.precacheModel("models/SolarSystem/moon.obj");
+		this.precacheModel("models/InterD/crosshair.obj");
 		this.precacheSound("sounds/pistol-1");
 		this.precacheSound("sounds/00electrexplo01");
 		this.precacheSound("sounds/00electrexplo03");
 		this.precacheSound("sounds/expl_03");
 	}
-	else if( stateName == "stage1" )
+	else if( stateName == "earthArrival" )
 	{
-		console.log("FINISHED LOADING!!");
-
+		// Spawn the planet, get stuff setup, and animate the planet entry!!
 		var playerParams = {aiClassName: "PlayerTurret", modelName: "models/InterD/player_turret.obj", offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Vector3(0, 180, 0)};
 		var player = this.spawnActor(playerParams);
 		this.playerTurret = player;
@@ -597,30 +702,170 @@ GameBoard.prototype.setState = function(stateName)
 		this.initCursorEvents(this.crosshair);
 
 		this.spawnActor({aiClassName: "Planet", modelName: "models/SolarSystem/earth.obj", offset: new THREE.Vector3(-200, 0, -400), rotation: new THREE.Vector3(0, 0, 0), scale: 2.0});
+		this.setState("stage0");
+	}
+	else if( stateName == "gameover" )
+	{
+		this.showAlert({text: "GAME OVER"});
+
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			thisGameBoard.state.tick--;
+
+			if( thisGameBoard.state.tick == 0 )
+				thisGameBoard.setState("stage0");
+		}});
+
+		var tickOffset = 0;
+		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+			thisGameBoard.showAlert({text: "You destroyed " + thisGameBoard.statKills + " ships!", duration: 300});
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 600, logic: function(){
+			thisGameBoard.showAlert({text: "Thanks for playing!", duration: 350});
+		}});
+
+		this.state = {id: stateName, tick: 1200, aimingEnabled: false, loading: false, caching: 0, tickEvents: stateTickEvents, startHasBeenShot: false};	// States without a tick are infinite!
+	}
+	else if( stateName == "stage0" )
+	{
+		this.changeStat("kills", -this.statKills);
+		this.showAlert({text: "INTERSTELLAR DEFENSE", duration: 250});
+
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			if( thisGameBoard.state.startHasBeenShot )
+			{
+				thisGameBoard.setState("stage1");
+				return;
+			}
+
+			// Otherwise, do work
+			thisGameBoard.state.tick++;
+			
+			if( thisGameBoard.state.tick % 600 == 0 )
+			{
+				if( thisGameBoard.state.showDance == 0 )
+				{
+					thisGameBoard.showAlert({text: "SHOOT TO START<br /><img src='crosshair.png' width=160 height=160 />"});
+					thisGameBoard.state.showDance = 1;
+				}
+				else
+				{
+					thisGameBoard.showAlert({text: "INTERSTELLAR DEFENSE", duration: 200});
+					thisGameBoard.state.showDance = 0;
+				}
+			}
+		}});
+
+		//var startButton = thisGameBoard.spawnActor({aiClassName: "StartButton", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(0, 0, -100), rotation: new THREE.Vector3(0, 0, 0)});
+
+		var tickOffset = 0;
+
+		stateTickEvents.push({tick: tickOffset, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "StartButton", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(0, 0, -100), rotation: new THREE.Vector3(0, 0, 0)});
+		}});
+
+		this.state = {id: stateName, tick: 0, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, startHasBeenShot: false, showDance: 0};	// States without a tick are infinite!
+	}
+	else if( stateName == "stage1" )
+	{
+		this.playerTurret.ai.health = this.playerTurret.ai.maxHealth;
+
+		this.showAlert({text: "WAVE 1"});
 
 		// Now setup the tickevents for the first wave of enemies
 		var stateTickEvents = new Array();
 		var thisGameBoard = this;
 
-//		var tickEvent = {tick: 50, logic: function(){
-//			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
-//		}};
-//		stateTickEvents.push(tickEvent);
-
 		// A tick event with no tick number gets executed every tick.
 		stateTickEvents.push({logic: function(){
 			if( thisGameBoard.state.enemies < 1)
 				thisGameBoard.setState("stage2");
-//				setTimeout(function(){ thisGameBoard.setState("stage2"); }, 100);	
+		}});
 
-			/*
-			thisGameBoard.state.tick--;
+		var tickOffset = 0;
 
-			if( thisGameBoard.state.tick == 0 )
-			{
-				setTimeout(function(){ thisGameBoard.setState("stage2"); }, 100);
-			}
-			*/
+		// First wave
+		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 150, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 250, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+		}});
+
+		this.state = {id: stateName, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 5};	// States without a tick are infinite!
+		//this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 10};
+	}
+	else if( stateName == "stage2" )
+	{
+		this.showAlert({text: "WAVE 2"});
+
+		// Now setup the tickevents for the first wave of enemies
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			if( thisGameBoard.state.enemies < 1)
+				thisGameBoard.setState("stage3");
+		}});
+
+		var tickOffset = 0;
+		// Second wave
+		stateTickEvents.push({tick: tickOffset + 0, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 150, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+		}});
+
+		this.state = {id: stateName, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 5};
+	}
+	else if( stateName == "stage3" )
+	{
+		this.showAlert({text: "WAVE 3"});
+
+		// Now setup the tickevents for the first wave of enemies
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			if( thisGameBoard.state.enemies < 1)
+				thisGameBoard.setState("stage4");
 		}});
 
 		var tickOffset = 0;
@@ -645,9 +890,8 @@ GameBoard.prototype.setState = function(stateName)
 			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
 		}});
 
-/*
 		// Second wave
-		tickOffset = 500;
+		tickOffset = 0;
 		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
 			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
 		}});
@@ -667,30 +911,13 @@ GameBoard.prototype.setState = function(stateName)
 		stateTickEvents.push({tick: tickOffset + 250, logic: function(){
 			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
 		}});
-*/
 
-		this.state = {id: stateName, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 5};	// States without a tick are infinite!
-		//this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 10};
+		this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 10};
 	}
-	else if( stateName == "load_stage2" )
+	else if( stateName == "stage4" )
 	{
-		this.state = {id: stateName, aimingEnabled: false, loading: true, caching: 10};	// 10 models/sounds to pre-cache...
+		this.showAlert({text: "WAVE 4"});
 
-		// Now start pre-caching models
-		//this.precacheModel("models/InterD/defense_grid.obj");
-		this.precacheModel("models/InterD/player_turret.obj");
-		this.precacheModel("models/InterD/player_laser.obj");
-		this.precacheModel("models/InterD/enemy_ship.obj");
-		this.precacheModel("models/SolarSystem/sun.obj");
-		this.precacheModel("models/SolarSystem/earth.obj");
-		this.precacheModel("models/SolarSystem/moon.obj");
-		this.precacheSound("sounds/pistol-1");
-		this.precacheSound("sounds/00electrexplo01");
-		this.precacheSound("sounds/00electrexplo03");
-		this.precacheSound("sounds/expl_03");
-	}
-	else if( stateName == "stage2" )
-	{
 		// Now setup the tickevents for the first wave of enemies
 		var stateTickEvents = new Array();
 		var thisGameBoard = this;
@@ -698,68 +925,55 @@ GameBoard.prototype.setState = function(stateName)
 		// A tick event with no tick number gets executed every tick.
 		stateTickEvents.push({logic: function(){
 			if( thisGameBoard.state.enemies < 1)
-				thisGameBoard.setState("stage3");
+				thisGameBoard.setState("stage1");
 		}});
 
 		var tickOffset = 0;
-		// Second wave
+
+		// wave 1
 		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern2");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern2");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 150, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern2");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern2");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 250, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern1");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern2");
 		}});
 
-		this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 5};
-	}
-	else if( stateName == "stage3" )
-	{
-		// Now setup the tickevents for the first wave of enemies
-		var stateTickEvents = new Array();
-		var thisGameBoard = this;
-
-		// A tick event with no tick number gets executed every tick.
-		stateTickEvents.push({logic: function(){
-			if( thisGameBoard.state.enemies < 1)
-				thisGameBoard.setState("stage2");
-		}});
-
-		var tickOffset = 0;
-		// Second wave
+		// wave 2
+		tickOffset = 100;
 		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 150, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
 		}});
 
 		stateTickEvents.push({tick: tickOffset + 250, logic: function(){
-			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
 		}});
 
-		this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 5};
+		this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 10};
 	}
 	else
 		this.state = this.defaultState;
@@ -839,6 +1053,18 @@ GameBoard.prototype.onCursorMove = function(e)
 
 GameBoard.prototype.tick = function()
 {
+	this.crosshair.rotateY(0.01);
+
+	this.pendingStateChange = !!this.nextStateName;
+
+	if( this.pendingStateChange )
+	{
+ 		if( this.nextStateName == "stage1" )
+			this.removeAllActors(["EnemyShip", "PlayerLaser"]);
+		else
+			this.removeAllActors();
+	}
+
 	this.tickCount++;
 
 	var numEnemies = 0;
@@ -862,7 +1088,7 @@ GameBoard.prototype.tick = function()
 	}
 	*/
 
-	if( typeof this.state.tickEvents != 'undefined' )
+	if( typeof this.state.tickEvents != 'undefined' && !this.pendingStateChange)	// Only do state tick events if we are not about to get a delayed set state
 	{
 		for( i = 0; i < this.state.tickEvents.length; i++)
 		{
@@ -889,6 +1115,23 @@ GameBoard.prototype.tick = function()
 		this.cursorEvents.update();
 
 	this.renderer.render( this.scene, this.camera );
+
+	// Handle some UI stuff
+	if( this.alertDuration > 0)
+		this.alertDuration--;
+
+	if( this.alertDuration == 0 )
+	{
+		this.alertDuration = -1;
+
+		this.alertSlateElem = document.getElementById("alertSlate");
+		this.alertSlateElem.style.opacity = 0.0;
+	}
+
+	if( this.pendingStateChange )
+	{
+		this.setStateDelayed(this.nextStateName);
+	}
 };
 
 GameBoard.prototype.spawnActor = function(params)

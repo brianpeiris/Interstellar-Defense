@@ -234,15 +234,36 @@ function EnemyShip(actor)
 //	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 12
 	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 13
 
-	// Pattern 1
+	// Pattern 1 - start facing left, loop around earth, dive down, turn back up, then finally dive bomb
 	sequenceEntrance.steps.push({label: "pattern1", length: 70, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
 	sequenceEntrance.steps.push({length: 100, deltaRotate: 1, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
 	sequenceEntrance.steps.push({length: 50, deltaRotate: 0.5, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.8)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 1, deltaTranslate: new THREE.Vector3(0, 0, 2.0)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 150, deltaRotate: -1.2, deltaTranslate: new THREE.Vector3(0, 0, 1.7)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// Pattern 2 - start facing ?
+	sequenceEntrance.steps.push({label: "pattern2", length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -1, deltaTranslate: new THREE.Vector3(0, 0, 2)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: -0.5, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 2, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
 	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.0)});
 	sequenceEntrance.steps.push({length: 100, deltaRotate: 1, deltaTranslate: new THREE.Vector3(0, 0, 2.0)});
-	sequenceEntrance.steps.push({length: 60, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 8
-	sequenceEntrance.steps.push({length: 150, deltaRotate: -1.2, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 8
-	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 13
+	sequenceEntrance.steps.push({length: 60, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 150, deltaRotate: -1.2, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// Pattern 3 - start facing left, loop around earth and dive bomb straight towards the player
+	sequenceEntrance.steps.push({label: "pattern3", length: 70, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 1, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0.5, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.3)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0.2, deltaTranslate: new THREE.Vector3(0, 0, 2.3)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
 
 //	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 9
 //	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 10
@@ -375,11 +396,18 @@ EnemyShip.prototype.onTick = function()
 			this.sequence.onTick();
 		}
 
-		/*
-		var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/ship_trail.obj", offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Vector3(90, 0, 0), scale: 1.0, matrix: this.actor.sceneObject.matrix};
-		var trail = this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
-		trail.sceneObject.updateMatrix();
-		*/
+//		/*
+		var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/ship_trail.obj", offset: new THREE.Vector3(0, 0, -10), rotation: new THREE.Vector3(0, 0, 0), scale: 0.8, matrix: this.actor.sceneObject.matrix};
+		var trail = this.actor.gameBoard.spawnActor(explosionTemplate);
+		trail.ai.spinRate = 0;
+		trail.ai.speedUp = 0.2;
+		trail.ai.speedDown = 0.04;
+		trail.ai.startScale = 1.0;
+		trail.ai.maxScale = 1.0;
+		trail.ai.minScale = 0.04;
+		trail.ai.explode();
+		//trail.sceneObject.updateMatrix();
+//		*/
 	}
 	else
 	{
@@ -472,13 +500,16 @@ EnemyShip.prototype.onTick = function()
 
 EnemyShip.prototype.onDestroy = function()
 {
-	var explosionTemplate = {aiClassName: "Explosion", modelName: "models/SolarSystem/sun.obj", offset: new THREE.Vector3(0, 0, 0), scale: 0.5, matrix: this.actor.sceneObject.matrix};
-	this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
+	if( !this.actor.gameBoard.pendingStateChange )
+	{
+		var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/explosion.obj", offset: new THREE.Vector3(0, 0, 0), scale: 0.5, matrix: this.actor.sceneObject.matrix};
+		this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
 
-	this.actor.gameBoard.playSound(this.dieSoundFile, 0.5);
+		this.actor.gameBoard.playSound(this.dieSoundFile, 0.5);
 
-	if( typeof this.actor.gameBoard.state.enemies != 'undefined' )
-		this.actor.gameBoard.state.enemies--;
+		if( typeof this.actor.gameBoard.state.enemies != 'undefined' )
+			this.actor.gameBoard.state.enemies--;
+	}
 };
 
 function PlayerTurret(actor)
@@ -491,7 +522,9 @@ function PlayerTurret(actor)
 	this.damageSoundFile = "sounds/00electrexplo01";
 	this.deathSoundFile = "sounds/00electrexplo03";
 
-	this.health = 100;
+
+	this.maxHealth = 100;
+	this.health = this.maxHealth;
 	this.damageAmount = 1000;
 
 	//this.sceneObject = actor.sceneObject;	// doesn't work for some reason
@@ -609,8 +642,8 @@ PlayerTurret.prototype.onTick = function()
 			var collides = this.gameBoard.detectCollision(this.actor, actor);
 			if( collides )
 			{
-				actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
 				this.actor.setGameEvent({eventName: "damage", amount: actor.ai.damageAmount, priority: 1, stopsSequence: false});
+				actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
 			}
 		}
 	}
@@ -642,6 +675,10 @@ PlayerTurret.prototype.onTick = function()
 			{
 				this.health -= this.actor.gameEvent.amount;
 
+				var percentage = Math.round((this.health / this.maxHealth) * 100);
+				if( percentage > 0 )
+					this.actor.gameBoard.showAlert({text: "Health: " + percentage + "%"});
+
 				if( this.health <= 0 )
 				{
 					shouldClearGameEvent = false;
@@ -658,6 +695,7 @@ PlayerTurret.prototype.onTick = function()
 			else if( this.actor.gameEvent.eventName == "destroy" )
 			{
 				this.gameBoard.playSound(this.deathSoundFile, 0.4);
+				this.gameBoard.setState("gameover");
 			}
 		}
 
@@ -682,7 +720,7 @@ function PlayerLaser(actor)
 
 	this.health = 1;
 	this.damageAmount = 5000;
-	this.maxDist = 450;
+	this.maxDist = 700;
 	this.maxDist = this.maxDist * this.gameBoard.scaleFactor;
 }
 
@@ -788,6 +826,8 @@ function Explosion(actor)
 	this.maxScale = 2.5;
 	this.minScale = 0.5;
 
+	this.spinRate = 5.0;
+
 	this.currentScale = this.startScale;
 	this.exploding = 0;
 }
@@ -805,7 +845,7 @@ Explosion.prototype.onTick = function()
 	if( this.exploding == 0 )
 		return;
 
-	this.actor.sceneObject.rotateX(5);
+	this.actor.sceneObject.rotateX(this.spinRate);
 
 	if( this.exploding == 1)
 	{
@@ -864,4 +904,51 @@ Planet.prototype.explode = function()
 Planet.prototype.onTick = function()
 {
 	this.actor.sceneObject.rotateY(this.rotSpeed);
+};
+
+function StartButton(actor)
+{
+	this.actor = actor;
+	this.actor.team = 1;
+	this.actor.collideRadius = 20.0;
+
+	this.dieSoundFile = "sounds/expl_03";
+
+	this.gameBoard = actor.gameBoard;
+
+	// This class could be expanded to have customizable attributes here for various sizes and types of explosions. (Maybe they can be passed into the explode message)
+//	this.rotSpeed = 0.001;
+}
+
+/*
+Planet.prototype.explode = function()
+{
+	if( this.exploding != 0 )
+		return;
+
+	this.exploding = 1;
+};
+*/
+
+StartButton.prototype.onTick = function()
+{
+	if( !this.actor.gameEvent )
+	{
+		// do nothing
+	}
+	else
+	{
+		if( this.actor.gameEvent.eventName == "damage" )
+		{
+//			this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+			this.actor.gameBoard.state.startHasBeenShot = true;
+
+			var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/explosion.obj", offset: new THREE.Vector3(0, 0, 0), scale: 0.5, matrix: this.actor.sceneObject.matrix};
+			this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
+
+			this.actor.gameBoard.playSound(this.dieSoundFile, 0.5);
+
+			this.actor.gameBoard.removeActor(this.actor);
+		}
+	}
 };

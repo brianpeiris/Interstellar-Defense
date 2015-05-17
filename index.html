@@ -19,7 +19,7 @@
 		<script src="http://sdk.altvr.com/src/cursor/ColorHoverEffect.js"></script>
 		<script src="http://sdk.altvr.com/src/cursor/DragPlaneEffect.js"></script>
 
-		<!--
+<!--
 		<script src="lib/three.min.js"></script>
 		<script src="lib/MTLLoader.js"></script>
 		<script src="lib/OBJMTLLoader.js"></script>
@@ -33,10 +33,12 @@
 
 		<script src="src/cursor/ColorHoverEffect.js"></script>
 		<script src="src/cursor/DragPlaneEffect.js"></script>
-		-->
+	-->
 
 		<style>
 			body {
+				width: 100%;
+				height: 100%;
 				background-color: rgba(0, 0, 0, 0);
 //				background-image: url('starfield2.jpg');
 				background-size: cover;
@@ -57,6 +59,7 @@
 
 			.scoreBoard
 			{
+				display: none;
 				position: fixed;
 				//top: 400px;
 				bottom: 0;
@@ -67,49 +70,362 @@
 				font-weight: bold;
 				text-shadow: 2px 2px #000;
 			}
+
+			#alertSlate
+			{
+				position: fixed;
+				left: 0;
+				right: 0;
+				//bottom: 110px;
+				top: 710px;
+				width: 50%;
+				margin-left: auto;
+				margin-right: auto;
+				border: 0;
+				font-size: 30px;
+				font-family: Arial, sans-sarif;
+				font-weight: bold;
+				text-shadow: 2px 2px #000;
+				opacity: 0.0;
+				transition: opacity 0.5s;
+			}
+
+			#warningSlate
+			{
+				display: none;
+				background-image: url('starfield2.jpg');
+				position: fixed;
+				left: 0;
+				right: 0;
+				top: 50px;
+				width: 400px;
+				height: 600px;
+				margin-left: auto;
+				margin-right: auto;
+				border: 10px solid rgba(170, 170, 255, 0.7);
+				border-radius: 20px;
+				text-shadow: 2px 2px #000;
+			}
+
+			.wearningHeader
+			{
+				font-size: 20px;
+				font-weight: bold;
+				font-family: Arial, sans-sarif;
+				letter-spacing: 0.2em;
+			}
+
+			#debugSlate
+			{
+				display: none;
+				position: fixed;
+				bottom: 0;
+				right: 0;
+				width: 300px;
+				border: 2px solid red;
+			}
+
+			.options
+			{
+				font-size: 20px;
+				font-family: Arial, sans-sarif;
+				width: 300px;
+			}
+
+			#demoContainer
+			{
+				background-color: rgba(0, 0, 0, 0.5);
+				display: inline-block;
+				margin-top: 30px;
+				//width: 300px;
+				//height: 200px;
+				border: 2px solid white;
+				border-radius: 20px;
+			}
+
+			.prevArrow
+			{
+				visibility: hidden;
+				margin-top: 30px;
+				margin-bottom: 10px;
+				margin-right: 5px;
+				display: inline-block;
+				height: 180px;
+				width: 30px;
+			}
+
+			.nextArrow
+			{
+				visibility: hidden;
+				margin-top: 30px;
+				margin-bottom: 10px;
+				margin-left: 5px;
+				display: inline-block;
+				height: 180px;
+				width: 30px;
+			}
+
+			.shipName
+			{
+				font-size: 20px;
+				font-family: Arial, sans-sarif;
+				font-weight: bold;
+				color: #aaaaff;
+			}
+
+			.shipLabel
+			{
+				color: #fff;
+			}
+
+			.playButton {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 30px;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+}
+
+.playButton:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+		.note
+		{
+			padding: 20px;
+			//padding-right: 20px;
+			//padding-left: 20px;
+			width: 80%;
+			background-color: rgba(0, 0, 0, 0.5);
+			border-radius: 20px;
+			font-weight: bold;
+			font-family: Arial, sans-sarif;
+			letter-spacing: 0.05em;
+		}
+
+		#gameTitle
+		{
+			display: none;
+			font-size: 35px;
+			font-weight: bold;
+			font-family: Arial, sans-sarif;
+			letter-spacing: 0.1em;
+			text-shadow: 2px 2px #000;
+		}
 		</style>
 
 </head>
 <body onselectstart="return false;" ondragstart="return false;" ondoubleclick="return false;">
 
+	<div id="debugSlate">debug</div>
+
 	<div id="info">
-		Intersteller Defense
+		<!-- INTERSTELLAR DEFENSE -->
 	</div>
 
-	<div class="scoreBoard">
-		SHIPS DESTROYED: <div id="statKills" style="display: inline-block;">0</id>
+	<div class="scoreBoard" id="scoreBoard">
+		SHIPS DESTROYED: <div id="statKills" style="display: inline-block;">0</div>
 	</div>
 
+	<div id="alertSlate"></div>
+
+	<div id="gameTitle">
+		INTERSTELLAR DEFENSE
+	</div>
+
+	<div id="warningSlate"></div>
+
+	<script src="DemoShip.js"></script>
 	<script src="Actor.js"></script>
 	<script src="GameBoard.js"></script>
+
+	<script id="warningTemplate" type="text/html">
+		<center>
+			<img src="prev_arrow.png" class="prevArrow" /><div id="demoContainer" style="width: 300px; height: 200px;"></div><img src="next_arrow.png" class="nextArrow" /><br />
+			<font class="shipName"><font class="shipLabel">ENEMY SHIP:</font> BLUE M-CLASS</font>
+			<br /><br />
+			<input type="button" class="playButton" value="PLAY 2D" id="playButton" onclick="PlayNow();" />
+			<br /><br />
+			<div class="note">NOTE: It is recommended that you beam this game to a hologram enclosure.</div>
+			<br /><br /><br />
+			<font class="wearningHeader">&darr;&darr; &nbsp;&nbsp;READY TO BEAM&nbsp;&nbsp; &darr;&darr;</font><br />
+			<!--
+			<font class="wearningHeader">HOLOGRAM MODE</font><br />
+			<select class="options" id="holoBox" onchange="addParameter('preset', this.options[this.selectedIndex].value);">
+				<option value="auto" selected=true>Automatic</option>
+				<option value="gaming">Highrise Patio Enclosure</option>
+				<option value="topdown">2D Top-Down Shooter</option>
+			</select>
+			-->
+		</center>
+	</script>
 
 	<script>
 		var inAltspace = !!window.Alt;
 		var defenseGridObject = null;
 
+		function addParameter(name, value)
+		{
+			document.getElementById("playButton").value = "PLEASE WAIT..."
+
+			var gameURL = document.location.href;
+
+			// Does this parameter already exist?
+			if( getParameterByName(name) != "" )
+			{
+				var startedWithQuestion = true;
+
+				var start = gameURL.indexOf("&" + name + "=");
+				if( start == -1 )
+					start = gameURL.indexOf("?" + name + "=");
+				else
+					startedWithQuestion = false;
+
+				if( start >= 0 )
+				{
+					var end = gameURL.indexOf("&", start+1);
+					if( end == -1 )
+						end = gameURL.indexOf("#", start+1);
+
+					if( end >= 0 )
+					{
+						// Now we are ready to remove the old value.
+						var prefix = gameURL.substring(0, start);
+						var postfix = gameURL.substring(end);
+
+						if( startedWithQuestion )
+						{
+							postfix = postfix.substring(1);
+							postfix = "?" + postfix;
+						}
+
+						gameURL = prefix + postfix;
+					}
+					else
+					{
+						gameURL = gameURL.substring(0, start);
+					}
+
+					//console.log("Stripped URL of " + name + " value: " + gameURL + " (original " + document.location.href + ")");
+				}
+			}
+
+			// If this is a preset param, only add it in if its non-auto
+			if( name != "preset" || value != "auto" )
+			{
+				if( gameURL.indexOf("?") == -1 )
+					gameURL += "?" + name + "=" + value;
+				else
+					gameURL += "&" + name + "=" + value;
+			}
+
+			//console.log("New URL will be: " + gameURL);
+
+			// Navigate there
+			document.location.href = gameURL;
+		}
+
+		function getParameterByName(name) {
+			name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+			var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+			results = regex.exec(location.search);
+			return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+		}
+
+		function PlayNow()
+		{
+			addParameter("play", "1");
+		}
+
+		function DisplayWarning()
+		{
+			var gameTitle = document.getElementById("gameTitle");
+			gameTitle.style.display = "block";
+
+			var warningSlate = document.getElementById("warningSlate");
+			warningSlate.innerHTML = document.getElementById("warningTemplate").innerHTML;
+
+			// Select the correct hologram option for this URL
+			var preset = getParameterByName("preset");
+			if( preset != "" )
+			{
+				var holoBox = document.getElementById("holoBox");
+
+				var i;
+				for( i = 0; i < holoBox.options.length; i++ )
+				{
+					if( holoBox.options[i].value == preset )
+					{
+						holoBox.selectedIndex = i;
+						break;
+					}
+				}
+			}
+
+			warningSlate.style.display = "block";
+
+			var demo = new Demo();
+		}
+
 		if( inAltspace )
 		{
 			window.addEventListener("AltContentLoaded", function() {
-				initiateGame();
+				///*
+				//document.getElementById("debugSlate").innerHTML = "Depth: " + window.innerDepth + ", Width: " + window.innerWidth + ", Height: " + window.innerHeight;
+				//*/
+				if( window.innerDepth == 300 && getParameterByName("play") != 1 )
+					DisplayWarning();
+				else
+					initiateGame();
 			});
 		}
 		else
 		{
-			document.body.style.backgroundImage = "url('starfield2.jpg')";
-			setTimeout(function(){ initiateGame(); }, 1000);
+			document.body.style.backgroundColor = "#000000";
+			//document.body.style.backgroundColor = "#999999";
+//			document.body.style.backgroundImage = "url('starfield2.jpg')";
+
+			if( getParameterByName("play") == 1 )
+			{
+				document.body.style.backgroundImage = "url('starfield2.jpg')";
+				initiateGame();
+			}
+			else
+				DisplayWarning();
+
+			//setTimeout(function(){ initiateGame(); }, 1000);
 		}
 
 		var board;
 		function initiateGame()
 		{
- 			board = new GameBoard();
-
- 			if( !board.isInAltspace )
+			setTimeout(function()
 			{
-				document.addEventListener("click", function() {
-					board.playerFire();
-				}, false);
-			}
+ 				board = new GameBoard();
+
+ 				if( !board.isInAltspace )
+				{
+					document.addEventListener("click", function() {
+						board.playerFire();
+					}, false);
+				}
+			}, 1000);
 		}
 	</script>
 
