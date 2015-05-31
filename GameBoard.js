@@ -1,9 +1,31 @@
+var gNumAssets = 12;
+
 function GameBoard()
 {
+	this.isInAltspace = !!window.Alt;
+
+	this.isLocalPlayer = false;
+	this.networkEnabled = true;
+	this.networkObject = null;
+	this.networkLastAimTick = 0;
+	this.networkAimRate = 0;	// amount of ticks between syncing aiming position
+	this.networkFire = null;
+	this.networkState = null;
+
+	this.beamedURL = "beamed.html";
+
+	this.networkedShips = null;	// This is an array of enemy ship actors that is local but will be synced with the deadShips bit mask. Up to 32 ships per sequence.
+	this.networkReady = false;	// This is automatically set when its ready.
+	this.networkBeamState = false;	// Detect when this game room has been beamed to a location, so we can close it here.
+
+	//this.altLocalUser = (this.isInAltspace) ? window.Alt.Users.getLocalUser() : null;
+	this.altLocalUser = null;
+	//this.localUserName = (this.altLocalUser) ? this.altLocalUser.displayName : "none";
+	this.localUserName = "none";
+	this.activeUserName = "none";
 	this.crosshair = null;
 	this.rayPlane = null;
 
-	this.isInAltspace = null;
 	this.isTopDownMode = false;
 	this.rotationEnabled = true;
 	this.mouseAimEnabled = true;
@@ -17,7 +39,7 @@ function GameBoard()
 
 	//this.scene.position.z += 10;
 
-	if( !!window.Alt )
+	if( this.isInAltspace )
 	{
 		this.depthOffset = 0;
 		this.heightOffset = 0;
@@ -54,7 +76,7 @@ function GameBoard()
 	}
 	*/
 
-	if( preset == "meeting" && !!window.Alt && !personal)
+	if( preset == "meeting" && this.isInAltspace && !personal)
 	{
 		this.rotationAmount = new THREE.Vector3(50, 0, 0);
 		this.boardOffset = new THREE.Vector3(10, -200, 300);
@@ -66,25 +88,25 @@ function GameBoard()
 			this.scaleFactor = 4.0;
 			*/
 	}
-	else if( preset == "meeting2" && !!window.Alt && !personal)
+	else if( preset == "meeting2" && this.isInAltspace && !personal)
 	{
 		this.rotationAmount = new THREE.Vector3(20, 0, 0);
 		this.boardOffset = new THREE.Vector3(0, 0, 225);
 		this.scaleFactor = 4.0;
 	}
-	else if( preset == "meeting3" && !!window.Alt && !personal )
+	else if( preset == "meeting3" && this.isInAltspace && !personal )
 	{
 		this.rotationAmount = new THREE.Vector3(0, 0, 0);
 		this.boardOffset = new THREE.Vector3(0, 0, 0);
 		this.scaleFactor = 4.0;
 	}
-	else if( preset == "tea" && !!window.Alt && !personal )
+	else if( preset == "tea" && this.isInAltspace && !personal )
 	{
 		this.rotationAmount = new THREE.Vector3(40, 0, 0);
 		this.boardOffset = new THREE.Vector3(-160, -80, 330);
 		this.scaleFactor = 4.0;
 	}
-	else if( preset == "gaming" && !!window.Alt && !personal )
+	else if( preset == "gaming" && this.isInAltspace && !personal )
 	{
 			/*
 			this.rotationAmount = new THREE.Vector3(30, 0, 0);
@@ -102,7 +124,7 @@ function GameBoard()
 			this.scaleFactor = 10.0;
 		*/
 	}
-	else if( preset == "high" && !!window.Alt && !personal )
+	else if( preset == "high" && this.isInAltspace && !personal )
 	{
 		this.rotationAmount = new THREE.Vector3(30, 0, 0);
 		this.boardOffset = new THREE.Vector3(0, -50, 308);	//0 -50 308
@@ -110,7 +132,7 @@ function GameBoard()
 	}
 	else if( preset == "topdown" )
 	{
-		if( !!window.Alt )
+		if( this.isInAltspace )
 		{
 			if( !personal )
 			{
@@ -133,10 +155,10 @@ function GameBoard()
 			this.rotationAmount = new THREE.Vector3(90, 0, 0);
 			this.boardOffset = new THREE.Vector3(0, -150, 0);
 			this.scaleFactor = 2.0;
-			//this.isTopDownMode = true;
+			this.isTopDownMode = true;
 		}
 	}
-	else if( !!window.Alt && personal )
+	else if( this.isInAltspace && personal )
 	{
 		this.rotationAmount = new THREE.Vector3(30, 0, 0);
 		this.boardOffset = new THREE.Vector3(0, -50, -100);	//0 -50 308
@@ -150,16 +172,25 @@ function GameBoard()
 	this.alertMessage = null;
 	this.alertDuration = 0;
 
+	this.lastSyncedTick = -1;
+	this.timeoutTickCount = 0;
+	this.timeoutMaxTicks = 500;
+
 	// Init stats
 	this.statKills = 0;
 
 	// Quickly grab some DOM elements
 	this.statKillsElem = document.getElementById("statKills");
+	this.currentPlayerElem = document.getElementById("playerName");
+	this.numPlayerElem = document.getElementById("playerCount");
+	
 
 //	this.controlRight = null;
 //	this.controlLeft = null;
 //	this.turningAmount = 0;
 //	this.turningDirection = 0;
+
+	this.lastLocalUserName = "none";
 
 	this.tickCount = 0;
 	this.renderer = null;
@@ -182,6 +213,8 @@ function GameBoard()
 	this.delayedFireEvent = null;
 	this.cachedSounds = {};
 	this.cachedModels = {};
+
+	this.shuttingDown = false;
 
 	// Pre-cache some known sounds
 	var soundName;
@@ -207,12 +240,38 @@ function GameBoard()
 
 	// Only used while INSIDE of AltspaceVR
 
-
 	// Only used while OUTSIDE of AltspaceVR
 	this.camera = null;
 	this.ambient = null;
 
+	if( this.isInAltspace )
+	{
+		var board = this;
+//		setTimeout( function() {
+		board.localUserNameOverride = window.Alt.Users.getLocalUser().displayName;
+		//board.localUserNameOverride = "Altspace User";
+			//this.altLocalUser = user;
+			//this.localUserNameOverride = user.displayName;
+			board.loadCrosshair();
+		//});
+
+		/*
+		window.Alt.Users.getLocalUser().then(function(user) {
+			//this.altLocalUser = user;
+			this.localUserNameOverride = user.displayName;
+			this.loadCrosshair();
+		});
+		*/
+//		}, 1000);
+	}
+	else
+		this.loadCrosshair();
+}
+
+GameBoard.prototype.loadCrosshair = function()
+{
 	var board = this;
+
 	this.loader.load("models/InterD/crosshair.obj", function ( loadedObject ) {
 		board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 0.25);
 		board.scene.add(loadedObject);
@@ -220,13 +279,67 @@ function GameBoard()
 
 		loadedObject.userData.tintColor = new THREE.Color(0, 1, 0);
 
+		if( board.networkEnabled )
+		{
+			// Init firebase
+			var firebaseRootUrl = "https://inter-d.firebaseio.com/";
+    		var appId = "inter-d";
+
+    		board.networkObject = new THREE.Object3D();
+    		board.networkObject.isNetworkDirty = false;
+
+    		board.firebaseSync = new FirebaseSync(firebaseRootUrl, appId);
+    		board.firebaseSync.addObject(board.networkObject, "gamestate");
+    		board.firebaseSync.connect( function() {
+    			// Because the syncData object is not immidately retrieved, a delay must be added.
+    			setTimeout(function() {
+    				// When we connect, we need to determine if we are the one setting up the room or not
+
+    				//if( typeof board.networkObject.userData.syncData === 'undefined' || !board.networkObject.userData.syncData.isBeamed )
+    				if( typeof board.networkObject.userData.syncData === 'undefined' )	// Disable the beam check for debugging!!!!
+    				{
+   						var isPersonal = (window.innerDepth == 300);
+
+    					// Construct a brand new sync object for this room if one doesn't exist yet.
+	    				board.networkObject.userData.syncData = {numPlayers: 1, deadShips: 0x0, state: {name: "none", startTick: -1}, turret: {health: 100, yaw: 0}, fire: {tick: -1, yaw: 0}, isBeamed: isPersonal, lastSyncTick: -1, localPlayerName: "none"};
+	    				board.networkObject.userData.syncData.fire.yaw = 0;
+
+	    				if( board.localUserName == "none" )
+	    					board.localUserName = "Player 1";
+
+	    				board.firebaseSync.saveObject(board.networkObject);
+	    			}
+	    			else
+	    			{
+	    				// DEBUG otherwise just assume we are a different player...
+	    				var numPlayersNow = board.networkObject.userData.syncData.numPlayers + 1;
+	    				board.networkObject.userData.syncData.numPlayers = numPlayersNow;
+
+	    				if( board.localUserName == "none" )
+	    					board.localUserName = "Player " + numPlayersNow;
+
+	    				// Sync the fact that we joined the game (num players increased)
+	    				board.firebaseSync.saveObject(board.networkObject);
+	    			}
+
+		    		board.init();
+
+//		    		board.networkReady = true;	// Maybe network ready should not happen until after load_stage0 is called
+    			}, 3000);
+    		});
+    	}
+    	else
+    	{
+    		board.init();
+//    		this.localUserName = "Player 1";
+    	}
 	// Initialize everything
-		board.init();
+//		board.init();	// MULTIPLAYER ALWAYS ON FOR NOW!!
 
 	// Start the simulation
-		board.tick();
+//		board.tick();
 	});
-}
+};
 
 GameBoard.prototype.showAlert = function(alert_message)
 {
@@ -270,10 +383,15 @@ GameBoard.prototype.precacheSound = function(sound_file_name)
 	var sound = new Audio(soundName);
 	//canplay, canplaythrough
 
+	// Just mark the sound as pre-cached already, because sometimes they are not being detected as being cached...
+	this.onSoundCached(sound, soundFileName);
+
+/*
 	sound.addEventListener("canplaythrough", function() {
 		thisGameBoard.onSoundCached(sound, soundFileName);
 		sound.removeEventListener("canplaythrough", arguments.callee);
 	});
+*/
 };
 
 GameBoard.prototype.onSoundCached = function(loadedSound, soundFileName)
@@ -283,6 +401,9 @@ GameBoard.prototype.onSoundCached = function(loadedSound, soundFileName)
 
 	this.cachedSounds[soundFileName] = loadedSound;
 	this.state.caching--;
+
+	this.showAlert({text: "LOADING (" + (gNumAssets - this.state.caching) + "/" + gNumAssets + ")", duration: 800});
+	console.log("Precached sound: " + soundFileName);
 
 	if( this.state.caching < 1 )
 	{
@@ -469,7 +590,11 @@ GameBoard.prototype.initCursorEvents = function(listener)
 	if( this.isInAltspace )
 	{
 		this.playerTurret.sceneObject.addEventListener("holocursordown", function(event) {
-			thisGameBoard.playerFire();
+			if( thisGameBoard.networkReady && thisGameBoard.networkObject.userData.syncData.localPlayerName != "none" && !thisGameBoard.isLocalPlayer )
+				return;
+
+			if( thisGameBoard.state.name != "waiting" )	// is this check still needed?
+				thisGameBoard.playerFire();
 		});
 	}
 
@@ -482,7 +607,11 @@ GameBoard.prototype.initCursorEvents = function(listener)
 		if( this.isInAltspace )
 		{
 			this.crosshair.addEventListener("holocursordown", function(event) {
-				thisGameBoard.playerFire();
+				if( thisGameBoard.networkReady && thisGameBoard.networkObject.userData.syncData.localPlayerName != "none" && !thisGameBoard.isLocalPlayer )
+					return;
+
+				if( thisGameBoard.state.name != "waiting" )
+					thisGameBoard.playerFire();
 			});
 		}
 	}
@@ -497,7 +626,6 @@ GameBoard.prototype.initCursorEvents = function(listener)
 
 GameBoard.prototype.init = function()
 {
-	this.isInAltspace = !!window.Alt;
 //	this.loader = new THREE.AltOBJMTLLoader();
 	this.actors = new Array();
 
@@ -528,12 +656,14 @@ GameBoard.prototype.init = function()
 			this.camera.position.y = 100;
 			this.camera.position.z = 0;
 
+/*
 			this.camera.rotation.x = (Math.PI/180) * (-90);
 			this.camera.rotation.y = 0;
 			this.camera.rotation.z = 0;
+			*/
 
-			this.camera.translateZ(800);
-			this.camera.translateY(200);
+			this.camera.translateZ(1300);
+			this.camera.translateY(50);
 			this.camera.position.x = 0;
 
 		}
@@ -620,6 +750,21 @@ GameBoard.prototype.init = function()
 
 	// Set the state to load everything needed for stage 1
 	this.setState("load_earthArrival");
+
+	if( !this.isInAltspace )
+	{
+//		this.localUserNameOverride = "Sith Lord";
+		while( !this.localUserNameOverride || this.localUserNameOverride == "" )
+			this.localUserNameOverride = prompt("Enter a player name:", "");
+
+		if( !this.localUserNameOverride )
+			window.history.back();
+	}
+
+	if( typeof this.localUserNameOverride != 'undefined' && this.localUserNameOverride != "" )
+		this.localUserName = this.localUserNameOverride;
+
+	this.tick();
 };
 
 GameBoard.prototype.removeAllActors = function(target_class_names)
@@ -628,7 +773,7 @@ GameBoard.prototype.removeAllActors = function(target_class_names)
 	if( typeof target_class_names != 'undefined' )
 		targetClassNames = target_class_names;
 	else
-		targetClassNames = ["EnemyShip", "PlayerLaser"];
+		targetClassNames = ["EnemyShip", "PlayerLaser", "StartButton"];
 
 	var i;
 	var j;
@@ -655,9 +800,13 @@ GameBoard.prototype.setState = function(stateName)
 
 GameBoard.prototype.setStateDelayed = function(stateName)
 {
+	// If we are just now changing to this state, no network ships have been destroyed yet.
+	this.networkedShips = new Array();
+
 	this.nextStateName = null;
 
-	this.lastFiredTick = this.tickCount + 100;
+	//this.lastFiredTick = this.tickCount + 100;
+	this.lastFiredTick = this.tickCount;
 
 	if( stateName == "load_earthArrival" )
 	{
@@ -673,8 +822,24 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 //		thisBoard.scene.add(loadedObject);
 //	});
 
+		this.showAlert({text: "LOADING (0/" + gNumAssets + ")", duration: 800});
+
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			// Otherwise, do work
+			thisGameBoard.state.tick++;
+			
+			if( thisGameBoard.state.tick % 300 == 0 )
+			{
+				thisGameBoard.showAlert({text: "LOADING (" + (gNumAssets - thisGameBoard.state.caching) + "/" + gNumAssets + ")", duration: 800});
+			}
+		}});
+
 		// First set the state
-		this.state = {id: stateName, aimingEnabled: false, loading: true, caching: 11};	// 11 models/sounds to pre-cache...
+		this.state = {id: stateName, tick: 0, aimingEnabled: false, loading: true, caching: gNumAssets};	// gNumAssets number of models/sounds to pre-cache...
 
 		// Now start pre-caching models
 		//this.precacheModel("models/InterD/defense_grid.obj");
@@ -685,6 +850,7 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 		this.precacheModel("models/InterD/explosion.obj");
 		this.precacheModel("models/SolarSystem/earth.obj");
 		this.precacheModel("models/InterD/crosshair.obj");
+		this.precacheModel("models/InterD/asteroid.obj");
 		this.precacheSound("sounds/pistol-1");
 		this.precacheSound("sounds/00electrexplo01");
 		this.precacheSound("sounds/00electrexplo03");
@@ -695,6 +861,9 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 		// Spawn the planet, get stuff setup, and animate the planet entry!!
 		var playerParams = {aiClassName: "PlayerTurret", modelName: "models/InterD/player_turret.obj", offset: new THREE.Vector3(0, 0, 0), rotation: new THREE.Vector3(0, 180, 0)};
 		var player = this.spawnActor(playerParams);
+
+
+		// SET THE PLAYER TURRET
 		this.playerTurret = player;
 
 		// We can now init the cursor events that the player turret exists!
@@ -702,11 +871,58 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 		this.initCursorEvents(this.crosshair);
 
 		this.spawnActor({aiClassName: "Planet", modelName: "models/SolarSystem/earth.obj", offset: new THREE.Vector3(-200, 0, -400), rotation: new THREE.Vector3(0, 0, 0), scale: 2.0});
-		this.setState("stage0");
+
+		// We are now ready to begin simulating!!!
+		if( this.networkEnabled )
+		{
+			this.networkReady = true;
+
+			if( this.networkObject.userData.syncData.localPlayerName != "none" )
+			{
+				if( this.localUserName == "" || this.networkObject.userData.syncData.localPlayerName != this.localUserName )
+				{
+					// If there is somebody currently playing, move into the WAITING state...
+					this.setState("waiting");
+				}
+				else
+				{
+					// Otherwise, if it is US who is the active player, re-load the current wave!
+//					console.log(this.networkObject.userData.syncData.state.name);
+//					this.setState(this.networkObject.userData.syncData.state.name);
+				}
+			}
+			else
+				this.setState("stage0");
+		}
+		else
+			this.setState("stage0");
+	}
+	else if( stateName == "waiting" )
+	{
+		this.showAlert({text: "WAITING FOR MULTIPLAYER..."});
+
+		//this.networkObject.userData.syncData.isBeamed = true;
+
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			thisGameBoard.state.tick++;
+			
+			if( thisGameBoard.state.tick % 400 == 0 )
+			{
+				thisGameBoard.showAlert({text: "WAITING FOR MULTIPLAYER...", duration: 200});
+			}
+		}});
+
+		this.state = {id: stateName, tick: 0, aimingEnabled: false, loading: false, caching: 0, tickEvents: stateTickEvents};
 	}
 	else if( stateName == "gameover" )
 	{
 		this.showAlert({text: "GAME OVER"});
+
+		//this.networkObject.userData.syncData.isBeamed = true;
 
 		var stateTickEvents = new Array();
 		var thisGameBoard = this;
@@ -716,7 +932,25 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 			thisGameBoard.state.tick--;
 
 			if( thisGameBoard.state.tick == 0 )
+			{
+				//console.log("Debug info: " + this.networkReady + " AND " + this.isLocalPlayer);
+				// Reset network status stuff
+				if( thisGameBoard.networkReady )
+				{
+					if( thisGameBoard.isLocalPlayer )
+					{
+						thisGameBoard.networkObject.userData.syncData.localPlayerName = "none";
+						thisGameBoard.networkObject.userData.syncData.lastSyncTick = thisGameBoard.tickCount;
+						thisGameBoard.networkObject.userData.syncData.turret = {health: 100, yaw: 0};
+						thisGameBoard.isLocalPlayer = false;
+
+						// Sync us RIGHT NOW (because clients usally don't send any sync data during ticks unless they are the local player)
+						thisGameBoard.firebaseSync.saveObject(thisGameBoard.networkObject);
+					}
+				}
+
 				thisGameBoard.setState("stage0");
+			}
 		}});
 
 		var tickOffset = 0;
@@ -724,15 +958,17 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 			thisGameBoard.showAlert({text: "You destroyed " + thisGameBoard.statKills + " ships!", duration: 300});
 		}});
 
-		stateTickEvents.push({tick: tickOffset + 600, logic: function(){
+		stateTickEvents.push({tick: tickOffset + 400, logic: function(){
 			thisGameBoard.showAlert({text: "Thanks for playing!", duration: 350});
 		}});
 
-		this.state = {id: stateName, tick: 1200, aimingEnabled: false, loading: false, caching: 0, tickEvents: stateTickEvents, startHasBeenShot: false};	// States without a tick are infinite!
+		this.state = {id: stateName, tick: 500, aimingEnabled: false, loading: false, caching: 0, tickEvents: stateTickEvents, startHasBeenShot: false};	// States without a tick are infinite!
 	}
 	else if( stateName == "stage0" )
 	{
+		this.playerTurret.ai.health = this.playerTurret.ai.maxHealth;
 		this.changeStat("kills", -this.statKills);
+
 		this.showAlert({text: "INTERSTELLAR DEFENSE", duration: 250});
 
 		var stateTickEvents = new Array();
@@ -776,8 +1012,6 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 	}
 	else if( stateName == "stage1" )
 	{
-		this.playerTurret.ai.health = this.playerTurret.ai.maxHealth;
-
 		this.showAlert({text: "WAVE 1"});
 
 		// Now setup the tickevents for the first wave of enemies
@@ -794,6 +1028,14 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 
 		// First wave
 		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
+			/*
+			var asteroid = thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/asteroid.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0), scale: 1.0});
+			asteroid.ai.health = 200;
+			asteroid.ai.trailEnabled = false;
+			asteroid.collideRadius = 80;
+			asteroid.ai.playSequence("entrance", "pattern0");
+			*/
+
 			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern0");
 		}});
 
@@ -925,7 +1167,7 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 		// A tick event with no tick number gets executed every tick.
 		stateTickEvents.push({logic: function(){
 			if( thisGameBoard.state.enemies < 1)
-				thisGameBoard.setState("stage1");
+				thisGameBoard.setState("stage5");
 		}});
 
 		var tickOffset = 0;
@@ -975,8 +1217,99 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 
 		this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 10};
 	}
+	else if( stateName == "stage5" )
+	{
+		this.showAlert({text: "WAVE 5"});
+
+		// Now setup the tickevents for the first wave of enemies
+		var stateTickEvents = new Array();
+		var thisGameBoard = this;
+
+		// A tick event with no tick number gets executed every tick.
+		stateTickEvents.push({logic: function(){
+			if( thisGameBoard.state.enemies < 1)
+				thisGameBoard.setState("gameover");
+		}});
+
+		var tickOffset = 0;
+
+		// 2 guys attack on the left straight away
+		stateTickEvents.push({tick: tickOffset + 0, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern7");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern7");
+		}});
+
+		// wave 1
+		stateTickEvents.push({tick: tickOffset + 50, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern4");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern5");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 150, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern4");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern5");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 250, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(500, 0, -200), rotation: new THREE.Vector3(0, 90, 0)}).ai.playSequence("entrance", "pattern4");
+		}});
+
+		// wave 2
+		tickOffset = 100;
+		stateTickEvents.push({tick: tickOffset + 0, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern6");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern6");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern6");
+		}});
+/*
+		stateTickEvents.push({tick: tickOffset + 100, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 150, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
+		}});
+
+		stateTickEvents.push({tick: tickOffset + 250, logic: function(){
+			thisGameBoard.spawnActor({aiClassName: "EnemyShip", modelName: "models/InterD/enemy_ship.obj", offset: new THREE.Vector3(-500, 0, 200), rotation: new THREE.Vector3(0, -90, 0)}).ai.playSequence("entrance", "pattern3");
+		}});
+*/
+		this.state = {id: stateName, tick: 1600, aimingEnabled: true, loading: false, caching: 0, tickEvents: stateTickEvents, enemies: 10};
+	}
 	else
 		this.state = this.defaultState;
+
+	if( this.networkReady )
+	{
+		if( this.isLocalPlayer )
+		{
+			this.networkObject.userData.syncData.state.name = this.state.id;
+			this.networkObject.userData.syncData.state.startTick = this.tickCount;	// Need to broadcast when we started so our "last fired" tick numbers make sense to clients.
+			this.networkObject.userData.syncData.deadShips = 0x0;
+			this.networkObject.userData.syncData.fire = {tick: -1, yaw: 0};
+
+			this.networkObject.isNetworkDirty = true;
+		}
+	}
 };
 
 GameBoard.prototype.precacheModel = function(model_file_name)
@@ -998,6 +1331,13 @@ GameBoard.prototype.onModelCached = function(loadedObject, modelFileName)
 	this.cachedModels[modelFileName] = loadedObject;
 	this.state.caching--;
 
+	var cacheInstance = loadedObject.clone();
+	cacheInstance.scale.set(0.01, 0.01, 0.01);
+	this.scene.add(cacheInstance);
+
+	this.showAlert({text: "LOADING (" + (gNumAssets - this.state.caching) + "/" + gNumAssets + ")", duration: 800});
+	console.log("Precached model: " + modelFileName);
+
 	if( this.state.caching < 1 )
 	{
 		var nextStateName = this.state.id.substring(5);
@@ -1011,6 +1351,17 @@ GameBoard.prototype.rayCast = function(ray)
 	if( !this.mouseAimEnabled || typeof this.playerTurret.sceneObject == 'undefined' || !this.listener )	// || switcher
 		return;
 
+	if( this.networkReady && this.networkObject.userData.syncData.localPlayerName != "none" && !this.isLocalPlayer )
+	{
+		if( this.crosshair )
+		{
+			this.crosshair.position.x = this.playerTurret.sceneObject.position.x;
+			this.crosshair.position.y = this.playerTurret.sceneObject.position.y;
+			this.crosshair.position.z = this.playerTurret.sceneObject.position.z;
+		}
+		return;
+	}
+
 	this.raycaster.set( ray.origin, ray.direction );
 
 /*
@@ -1022,20 +1373,15 @@ GameBoard.prototype.rayCast = function(ray)
 
 	var pos = ( intersects.length > 0 ) ? intersects[0].point : ray.origin;
 
-	if( this.crosshair )
-	{
-		this.crosshair.position.x = pos.x;
-		this.crosshair.position.y = pos.y;
-		this.crosshair.position.z = pos.z;
-
-/*
-		switcher = true;
-		setTimeout(function(){ switcher = false; }, 5000);
-*/
-	}
-
 	if ( intersects.length > 0 )
 	{
+		if( this.crosshair )
+		{
+			this.crosshair.position.x = pos.x;
+			this.crosshair.position.y = pos.y;
+			this.crosshair.position.z = pos.z;
+		}
+
 		this.playerCursorPosition = intersects[0].point;
 		// Instead of modifying game objects here, just set a game event that the board handles during the next tick.
 		this.playerTurret.setGameEvent({eventName: "setLook", priority: 0, stopsSequence: false});
@@ -1045,6 +1391,8 @@ GameBoard.prototype.rayCast = function(ray)
 // Note that the "this" pointer in this callback will be to the listener object, NOT the GameBoard object itself.
 GameBoard.prototype.onCursorMove = function(e)
 {
+//	if( this.networkReady && (this.networkObject.userData.syncData.localPlayerName != "none" && !this.isLocalPlayer )
+//		return;
 	var board = this.board;
 
 	if( board.state.aimingEnabled )
@@ -1053,19 +1401,79 @@ GameBoard.prototype.onCursorMove = function(e)
 
 GameBoard.prototype.tick = function()
 {
+	this.tickCount++;
+
+	if( this.shuttingDown )
+		return;
+
+	// If we used to be not beamed, but now we are beamed, then gtfo
+	/*
+	if( this.networkReady )
+	{
+		var personal = (window.innerDepth == 300);
+
+		if( this.networkObject.userData.syncData.isBeamed != personal )
+		{
+			this.shuttingDown = true;
+
+			document.location.href = this.beamedURL;
+			return;
+		}
+	}
+	*/
+
+//console.log("Debug info: " + (this.networkObject.userData.syncData.localPlayerName == this.localUserName) + " and " + (!this.isLocalPlayer));
+//console.log("Debug info: " + this.networkObject.userData.syncData.localPlayerName + " and " + this.localUserName);
+
+	//if( this.networkEnabled )
+	if( this.networkReady )
+	{
+		// Determine if we are here and ready to start a networked game...
+		if( this.networkObject.userData.syncData.localPlayerName == this.localUserName )
+		{
+			if( !this.isLocalPlayer )
+			{
+				// Set us as the local player.
+				this.isLocalPlayer = true;
+				this.setState("stage1");
+			}
+		}
+		else if( !this.isLocalPlayer )
+		{
+			// Otherwise, we are in pure CLIENT mode
+			// MIRROR THE TURRET ROTATION
+			if( this.networkObject.userData.syncData.localPlayerName != "none" )
+				this.playerTurret.sceneObject.rotation.y = this.networkObject.userData.syncData.turret.yaw;
+
+			// IF THE CURRENT NETWORKED FIRE IS NOT OUR LAST LOCAL FIRE, FIRE IT
+			if( this.networkObject.userData.syncData.fire.tick != -1 && (!this.networkFire || this.networkObject.userData.syncData.fire.tick != this.networkFire.tick) )
+			{
+				this.networkFire = this.networkObject.userData.syncData.fire;
+				this.playerFire();
+			}
+
+			// IF THE CURRENT NETWORK STATE IS NOT WHAT IT USED TO BE, THEN FIRE IT
+			if( this.networkObject.userData.syncData.state.name != "none" && (!this.networkState || this.networkObject.userData.syncData.state.name != this.networkState.name || this.networkObject.userData.syncData.state.startTick != this.networkState.startTick))
+			{
+				// Replicate the state change!
+				this.networkState = this.networkObject.userData.syncData.state;
+				this.setState(this.networkObject.userData.syncData.state.name);
+//				return;
+			}
+		}
+	}
+
 	this.crosshair.rotateY(0.01);
 
 	this.pendingStateChange = !!this.nextStateName;
 
 	if( this.pendingStateChange )
 	{
- 		if( this.nextStateName == "stage1" )
-			this.removeAllActors(["EnemyShip", "PlayerLaser"]);
-		else
+// 		if( this.nextStateName == "stage1" )
+//			this.removeAllActors(["EnemyShip", "PlayerLaser"]);
+//		else
 			this.removeAllActors();
 	}
-
-	this.tickCount++;
 
 	var numEnemies = 0;
 	var i;
@@ -1131,6 +1539,74 @@ GameBoard.prototype.tick = function()
 	if( this.pendingStateChange )
 	{
 		this.setStateDelayed(this.nextStateName);
+	}
+
+	/*
+		XYZ/PYR	: auto-sycned by THREE.js
+		deadShips	: int flags of all dead ships
+		startWave	: int wave number to initiate
+		fire		: int should we fire a laser?
+	*/
+
+	// If this the local user name has changed since last tick, update it.
+	if( this.networkReady )
+	{
+		if( this.lastLocalUserName != this.networkObject.userData.syncData.localPlayerName )
+		{
+			this.lastLocalUserName = this.networkObject.userData.syncData.localPlayerName;
+			this.currentPlayerElem.innerText = this.lastLocalUserName;
+		}
+
+		if( this.lastPlayerCount != this.networkObject.userData.syncData.numPlayers )
+		{
+			this.lastNumPlayers = this.networkObject.userData.syncData.numPlayers;
+			this.numPlayerElem.innerText = this.lastNumPlayers;	
+		}
+	}
+
+	// AFTER THE SERVER EXECUTES THE LOGIC FOR THE TICK, SYNC THE NETWORK OBJECT
+	if( this.networkReady )
+	{
+		if( this.isLocalPlayer )
+		{
+			if( this.networkObject.isNetworkDirty )
+			{
+				this.networkObject.userData.syncData.lastSyncTick = this.tickCount;
+				this.firebaseSync.saveObject(this.networkObject);
+			//	console.log("Syncing network object...");
+			//	console.log(this.networkObject);
+			}
+
+			// Clear this sync event out.
+			if( this.networkObject )
+				this.networkObject.isNetworkDirty = false;
+		}
+		else
+		{
+			if( this.lastSyncedTick == this.networkObject.userData.syncData.lastSyncTick && this.networkObject.userData.syncData.localPlayerName != "none" )
+			{
+				this.timeoutTickCount++;
+
+				if( this.timeoutTickCount >= this.timeoutMaxTicks )
+				{
+					this.timeoutTickCount = 0;
+
+					// Reset the state cuz the host timed out.
+					this.networkObject.userData.syncData.deadShips = 0;
+					this.networkObject.userData.syncData.fire = {tick: -1, yaw: 0};
+					this.networkObject.userData.syncData.localPlayerName = "none";
+//					this.networkObject.userData.syncData.numPlayers--;
+					this.networkObject.userData.syncData.state = {name: "gameover", startTick: 0};
+					this.networkObject.userData.syncData.turret = {health: 100, yaw: 0};
+					this.networkObject.userData.syncData.lastSyncTick = -1;
+					this.firebaseSync.saveObject(this.networkObject);
+				}
+			}
+			else
+				this.timeoutTickCount = 1;
+
+			this.lastSyncedTick = this.networkObject.userData.syncData.lastSyncTick;
+		}
 	}
 };
 
@@ -1232,9 +1708,20 @@ GameBoard.prototype.reInit = function()
 	}
 };
 
-GameBoard.prototype.playerFire = function()
+GameBoard.prototype.playerFire = function(is_network_fire)
 {
-	if( this.tickCount - this.lastFiredTick < this.fireRate )
+	var oldYaw = this.playerTurret.sceneObject.rotation.y;	// Needed for network fire
+
+	var isNetworkFire = false;
+	if( typeof is_network_fire != "undefined" && is_network_fire )
+	{
+		isNetworkFire = true;
+
+		this.playerTurret.sceneObject.rotation.y = this.networkFire.yaw;
+		this.playerTurret.sceneObject.updateMatrix();
+	}
+
+	if( this.tickCount - this.lastFiredTick < this.fireRate && !isNetworkFire )
 		return;
 
 	this.lastFiredTick = this.tickCount;
@@ -1244,7 +1731,24 @@ GameBoard.prototype.playerFire = function()
 
 	this.playerTurret.setGameEvent({eventName: "fire", priority: 50, projectiles: [laser1Template, laser2Template]});
 	this.turningAmount = 0;
-	//this.turningDirection = 0;
+
+	// If we shot, make sure our network state is updated.
+	if( this.networkReady )
+	{
+		if( this.isLocalPlayer )
+		{
+			var rot = this.playerTurret.sceneObject.rotation;
+			this.networkObject.userData.syncData.fire.yaw = rot.y;
+			this.networkObject.userData.syncData.fire.tick = this.tickCount;
+
+			this.networkObject.isNetworkDirty = true;
+		}
+		else
+		{
+			this.playerTurret.sceneObject.rotation.y = oldYaw;
+			this.playerTurret.sceneObject.updateMatrix();
+		}
+	}
 };
 
 GameBoard.prototype.detectCollision = function(actor0, actor1)

@@ -5,7 +5,8 @@
 		<title>Intersteller Defense</title>
 
 		<!-- Required by AltOBJMTLLoader.js -->
-		<script src="http://sdk.altvr.com/lib/three.min.js"></script>
+		<!--<script src="http://sdk.altvr.com/lib/three.min.js"></script>-->
+		<script src="http://sdk.altvr.com/lib/three.js"></script>
 		<script src="http://sdk.altvr.com/lib/MTLLoader.js"></script>
 		<script src="http://sdk.altvr.com/lib/OBJMTLLoader.js"></script>
 		<script src="http://sdk.altvr.com/lib/firebase.js"></script>
@@ -40,7 +41,6 @@
 				width: 100%;
 				height: 100%;
 				background-color: rgba(0, 0, 0, 0);
-//				background-image: url('starfield2.jpg');
 				background-size: cover;
 				margin: 0px;
 				overflow: hidden;
@@ -61,23 +61,24 @@
 			{
 				display: none;
 				position: fixed;
-				//top: 400px;
 				bottom: 0;
 				left: 0;
-//				right: 0;
 				font-size: 20px;
 				font-family: Arial, sans-sarif;
 				font-weight: bold;
 				text-shadow: 2px 2px #000;
 			}
 
-			#alertSlate
+			.alertSlate
 			{
+				height: 65%;
+				margin-top: auto;
+				margin-bottom: auto;
+
+				top: 710px;
 				position: fixed;
 				left: 0;
 				right: 0;
-				//bottom: 110px;
-				top: 710px;
 				width: 50%;
 				margin-left: auto;
 				margin-right: auto;
@@ -88,6 +89,17 @@
 				text-shadow: 2px 2px #000;
 				opacity: 0.0;
 				transition: opacity 0.5s;
+
+				/* Use this to change it to web-based
+				bottom: 0;
+				top: auto;
+				*/
+			}
+
+			.webAlertSlate
+			{
+				bottom: 0;
+				top: auto;
 			}
 
 			#warningSlate
@@ -209,8 +221,6 @@
 		.note
 		{
 			padding: 20px;
-			//padding-right: 20px;
-			//padding-left: 20px;
 			width: 80%;
 			background-color: rgba(0, 0, 0, 0.5);
 			border-radius: 20px;
@@ -228,6 +238,28 @@
 			letter-spacing: 0.1em;
 			text-shadow: 2px 2px #000;
 		}
+
+		#playerSlate
+		{
+			position: fixed;
+			bottom: 0px;
+			right: 0px;
+		}
+
+		#playerName
+		{
+			display: inline-block;
+		}
+
+		#playerCount
+		{
+			display: inline-block;
+		}
+
+		#totalPlayers
+		{
+			display: inline-block;
+		}
 		</style>
 
 </head>
@@ -243,13 +275,15 @@
 		SHIPS DESTROYED: <div id="statKills" style="display: inline-block;">0</div>
 	</div>
 
-	<div id="alertSlate"></div>
+	<div id="alertSlate" class="alertSlate"></div>
 
 	<div id="gameTitle">
 		INTERSTELLAR DEFENSE
 	</div>
 
 	<div id="warningSlate"></div>
+
+	<div id="playerSlate">Current Player: <div id="playerName">None</div><br /><div id="totalPlayers">Total Players: <div id="playerCount">0</div></div></div>
 
 	<script src="DemoShip.js"></script>
 	<script src="Actor.js"></script>
@@ -260,19 +294,21 @@
 			<img src="prev_arrow.png" class="prevArrow" /><div id="demoContainer" style="width: 300px; height: 200px;"></div><img src="next_arrow.png" class="nextArrow" /><br />
 			<font class="shipName"><font class="shipLabel">ENEMY SHIP:</font> BLUE M-CLASS</font>
 			<br /><br />
-			<input type="button" class="playButton" value="PLAY 2D" id="playButton" onclick="PlayNow();" />
+			<input type="button" class="playButton" value="PLAY NOW" id="playButton" onclick="PlayNow();" readonly disabled />
 			<br /><br />
-			<div class="note">NOTE: It is recommended that you beam this game to a hologram enclosure.</div>
-			<br /><br /><br />
-			<font class="wearningHeader">&darr;&darr; &nbsp;&nbsp;READY TO BEAM&nbsp;&nbsp; &darr;&darr;</font><br />
-			<!--
-			<font class="wearningHeader">HOLOGRAM MODE</font><br />
-			<select class="options" id="holoBox" onchange="addParameter('preset', this.options[this.selectedIndex].value);">
-				<option value="auto" selected=true>Automatic</option>
-				<option value="gaming">Highrise Patio Enclosure</option>
-				<option value="topdown">2D Top-Down Shooter</option>
-			</select>
-			-->
+			<div class="note" id="vrNote">NOTE: It is recommended that you beam this game to a hologram enclosure.</div>
+			<div id="vrInfo">
+				<br /><br /><br />
+				<font class="wearningHeader">&darr;&darr; &nbsp;&nbsp;READY TO BEAM&nbsp;&nbsp; &darr;&darr;</font><br />
+				<!--
+				<font class="wearningHeader">HOLOGRAM MODE</font><br />
+				<select class="options" id="holoBox" onchange="addParameter('preset', this.options[this.selectedIndex].value);">
+					<option value="auto" selected=true>Automatic</option>
+					<option value="gaming">Highrise Patio Enclosure</option>
+					<option value="topdown">2D Top-Down Shooter</option>
+				</select>
+				-->
+			</div>
 		</center>
 	</script>
 
@@ -360,7 +396,7 @@
 
 			var warningSlate = document.getElementById("warningSlate");
 			warningSlate.innerHTML = document.getElementById("warningTemplate").innerHTML;
-
+/*
 			// Select the correct hologram option for this URL
 			var preset = getParameterByName("preset");
 			if( preset != "" )
@@ -377,20 +413,42 @@
 					}
 				}
 			}
+*/
 
 			warningSlate.style.display = "block";
 
 			var demo = new Demo();
+
+			// Rename the play in 2d button if needed
+			if( !window.Alt )
+			{
+				var playButton = document.getElementById("playButton");
+				playButton.value = "PLAY NOW";
+
+				var vrInfo = document.getElementById("vrInfo");
+				vrInfo.style.display = "none";
+
+				var vrNote = document.getElementById("vrNote");
+				vrNote.innerText = "You control the last line of defense between the Earth and mysterious invaders! Check out this homage to coin-op space shooting games.";
+			}
 		}
 
 		if( inAltspace )
 		{
+			document.getElementById("totalPlayers").style.display = "none";
+
 			window.addEventListener("AltContentLoaded", function() {
 				///*
 				//document.getElementById("debugSlate").innerHTML = "Depth: " + window.innerDepth + ", Width: " + window.innerWidth + ", Height: " + window.innerHeight;
 				//*/
+				//if( window.innerDepth == 300 && getParameterByName("play") != 1 && getParameterByName("room") == "" )
 				if( window.innerDepth == 300 && getParameterByName("play") != 1 )
+				{
 					DisplayWarning();
+
+//					if( getParameterByName("room") != "" )
+//						var button = document.getElementById("playButton"); button.readOnly = false; button.disabled = false;
+				}
 				else
 					initiateGame();
 			});
@@ -401,13 +459,19 @@
 			//document.body.style.backgroundColor = "#999999";
 //			document.body.style.backgroundImage = "url('starfield2.jpg')";
 
+//			if( getParameterByName("play") == 1 || getParameterByName("room") != "" )
 			if( getParameterByName("play") == 1 )
 			{
 				document.body.style.backgroundImage = "url('starfield2.jpg')";
 				initiateGame();
 			}
 			else
+			{
 				DisplayWarning();
+
+//				if( getParameterByName("room") != "" )
+//					var button = document.getElementById("playButton"); button.readOnly = false; button.disabled = false;
+			}
 
 			//setTimeout(function(){ initiateGame(); }, 1000);
 		}
@@ -415,18 +479,40 @@
 		var board;
 		function initiateGame()
 		{
-			setTimeout(function()
-			{
+//			setTimeout(function()
+//			{
  				board = new GameBoard();
 
  				if( !board.isInAltspace )
 				{
+					// Click listener
 					document.addEventListener("click", function() {
+						if( board.networkReady && board.networkObject.userData.syncData.localPlayerName != "none" && !board.isLocalPlayer )
+							return;
+
 						board.playerFire();
 					}, false);
+
+					// Adjust the alert slate position
+					var alertSlate = document.getElementById("alertSlate");
+					alertSlate.className += " webAlertSlate ";
+					//console.log(alertSlate.className);
+	 				console.log(board);
 				}
-			}, 1000);
+//			}, 1000);
 		}
+
+		function onWindowResize()
+		{
+			if ( !!window.Alt || !board || !board.camera || !board.renderer )
+				return;
+
+			board.camera.aspect = window.innerWidth / window.innerHeight;
+			board.camera.updateProjectionMatrix();
+			board.renderer.setSize( window.innerWidth, window.innerHeight );
+		}
+		window.addEventListener( 'resize', onWindowResize, false );
+
 	</script>
 
 </body>

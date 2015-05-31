@@ -61,6 +61,12 @@ Demo.prototype.initScene = function()
 
 //		this.camera.translateZ(0);
 	}
+
+	// Connect to firebase NOW so we can reserve a room ID in case we beam this
+	var firebaseRootUrl = "https://inter-d.firebaseio.com/";
+	var appId = "inter-d";
+	var firebaseSync = new FirebaseSync(firebaseRootUrl, appId);
+    firebaseSync.connect( function() { var button = document.getElementById("playButton"); button.readOnly = false; button.disabled = false; });
 };
 
 Demo.prototype.insertDebugAxis = function()

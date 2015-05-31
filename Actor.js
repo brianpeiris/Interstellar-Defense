@@ -24,6 +24,10 @@ function Actor(params)
 	this.gameBoard = params.gameBoard;
 	this.modelName = params.modelName;
 	this.aiClassName = params.aiClassName;
+	if( typeof params.aiParams != 'undefined' )
+		this.aiParams = params.aiParams;
+	else
+		this.aiParams = null;
 
 	this.ai = null;
 	this.team = null;
@@ -31,7 +35,33 @@ function Actor(params)
 	this.gameEvent = null;
 	this.sceneObject = null;
 
+	var actorParams = params.actorParams;
+
+/*
+	// Now apply overrides
+	if( actorParams )
+	{
+		var attributeName;
+		for( attributeName in actorParams )
+		{
+			this[attributeName] = actorParams[attributeName];
+		}
+	}
+	*/
+
 	this.init();
+
+/*
+		// Now apply overrides
+	if( actorParams )
+	{
+		var attributeName;
+		for( attributeName in actorParams )
+		{
+			this[attributeName] = actorParams[attributeName];
+		}
+	}
+	*/
 }
 
 Actor.prototype.onTick = function()
@@ -191,11 +221,13 @@ function EnemyShip(actor)
 
 	this.lifeMaxZOffset = 20;
 
-	this.health = 100;
+	this.health = 60;
 	this.damageAmount = 35;
 
 	this.dieSoundFile = "sounds/expl_03";
 
+	this.trailEnabled = true;
+	this.trailModelFile = "models/InterD/ship_trail.obj";
 	this.trailRate = 10;
 	this.lastTrailTick = 0;
 
@@ -206,33 +238,31 @@ function EnemyShip(actor)
 
 	// Dive bomb A
 	sequenceEntrance.steps.push({label: "alpha", length: 130, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 0
-	sequenceEntrance.steps.push({length: 150, deltaRotate: 2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 1
-	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 2
-	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 3
-	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 4
-	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 5
-	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 6
-	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1), turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 7
+	sequenceEntrance.steps.push({length: 150, deltaRotate: 2, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1), turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
 
 	// Dive bomb B
 	sequenceEntrance.steps.push({label: "beta", length: 130, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
-	sequenceEntrance.steps.push({length: 150, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});	// step 8
-	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2)});	// step 9
-	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 10
-	sequenceEntrance.steps.push({length: 100, deltaRotate: 3, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 11
-	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 12
-	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1), turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 13
+	sequenceEntrance.steps.push({length: 150, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 3, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -2, deltaTranslate: new THREE.Vector3(0, 0, 1)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1), turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
 
 	// Pattern 0
 	sequenceEntrance.steps.push({label: "pattern0", length: 70, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
 	sequenceEntrance.steps.push({length: 100, deltaRotate: -1, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
-	sequenceEntrance.steps.push({length: 60, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 8
-	sequenceEntrance.steps.push({length: 150, deltaRotate: 1, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 8
-	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 9
-//	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 10
-	sequenceEntrance.steps.push({length: 140, deltaRotate: -1.2, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 11
-//	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});	// step 12
-	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});	// step 13
+	sequenceEntrance.steps.push({length: 60, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 150, deltaRotate: 1, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 140, deltaRotate: -1.2, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
 
 	// Pattern 1 - start facing left, loop around earth, dive down, turn back up, then finally dive bomb
 	sequenceEntrance.steps.push({label: "pattern1", length: 70, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1)});
@@ -263,6 +293,36 @@ function EnemyShip(actor)
 	sequenceEntrance.steps.push({length: 50, deltaRotate: 0.5, deltaTranslate: new THREE.Vector3(0, 0, 1.3)});
 	sequenceEntrance.steps.push({length: 100, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.3)});
 	sequenceEntrance.steps.push({length: 50, deltaRotate: 0.2, deltaTranslate: new THREE.Vector3(0, 0, 2.3)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// Pattern 4 - start facing right, orbit around once, then drive bomb
+	sequenceEntrance.steps.push({label: "pattern4", length: 420, deltaRotate: -1.3, deltaTranslate: new THREE.Vector3(0, 0, 3)});
+//	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 60, deltaRotate: 2.5, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// Pattern 5 - like pattern 4, but turn differently after you exit the planet
+	sequenceEntrance.steps.push({label: "pattern5", length: 100, deltaRotate: -1.3, deltaTranslate: new THREE.Vector3(0, 0, 3)});
+	sequenceEntrance.steps.push({length: 20, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: 2, deltaTranslate: new THREE.Vector3(0, 0, 3)});
+	sequenceEntrance.steps.push({length: 80, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 3.5)});
+	sequenceEntrance.steps.push({length: 60, deltaRotate: -3.0, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// Pattern 6 - start facing left, 
+	sequenceEntrance.steps.push({label: "pattern6", length: 230, deltaRotate: 1.1, deltaTranslate: new THREE.Vector3(0, 0, 3.2)});
+	sequenceEntrance.steps.push({length: 40, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 100, deltaRotate: -1.8, deltaTranslate: new THREE.Vector3(0, 0, 2.3)});
+	sequenceEntrance.steps.push({length: 40, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// Pattern 7 - start facing left, almost immidately divebomb, fast.
+	sequenceEntrance.steps.push({label: "pattern7", length: 100, deltaRotate: 1.1, deltaTranslate: new THREE.Vector3(0, 0, 3)});
+	sequenceEntrance.steps.push({length: 70, deltaRotate: 0.5, deltaTranslate: new THREE.Vector3(0, 0, 2.5)});
+	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
+
+	// instaDiveBomb - start facing left, almost immidately divebomb, fast.
+	sequenceEntrance.steps.push({label: "instaDiveBomb", length: 1, deltaRotate: 0.0, deltaTranslate: new THREE.Vector3(0, 0, 0)});
 	sequenceEntrance.steps.push({length: 0, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 2), divebomb: true, turning: 0, turnStartTick: 0, turnMaxLength: 80, turnRotation: 0});
 
 //	sequenceEntrance.steps.push({length: 50, deltaRotate: 0, deltaTranslate: new THREE.Vector3(0, 0, 1.5)});	// step 9
@@ -359,6 +419,33 @@ function EnemyShip(actor)
 	sequenceEntrance.actor = this.actor;
 	sequenceEntrance.gameBoard = this.gameBoard;
 	this.sequences[sequenceEntrance.name] = sequenceEntrance;
+
+/*
+	// Now apply overrides
+	var aiParams = this.actor.aiParams;
+
+	if( aiParams )
+	{
+		var attributeName;
+		for( attributeName in aiParams )
+		{
+					console.log(attributeName + ", ", + aiParams[attributeName]);
+			this[attributeName] = aiParams[attributeName];
+		}
+	}
+
+	console.log("Are trails enabled? " + this.trailEnabled);
+	*/
+
+	// Register us if we are in multiplayer mode
+//	if( this.actor.gameBoard.networkReady )
+//	{
+//		if( this.actor.gameBoard.isLocalPlayer )
+//		{
+			this.actor.gameBoard.networkedShips.push(this.actor);
+			this.shipIndex = this.actor.gameBoard.networkedShips.length - 1;
+//		}
+//	}
 }
 
 EnemyShip.prototype.playSequence = function(sequence_name, sequence_label)
@@ -389,6 +476,16 @@ EnemyShip.prototype.playSequence = function(sequence_name, sequence_label)
 
 EnemyShip.prototype.onTick = function()
 {
+	// First check if we should network die...
+	if( this.actor.gameBoard.networkReady )
+	{
+		if( !this.actor.gameBoard.isLocalPlayer )
+		{
+			if( this.actor.gameBoard.networkObject.userData.syncData.deadShips & (1 << this.shipIndex) )
+				this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
+		}
+	}
+
 	if( !this.actor.gameEvent )
 	{
 		if( this.sequence && this.sequence.onTick )
@@ -396,16 +493,20 @@ EnemyShip.prototype.onTick = function()
 			this.sequence.onTick();
 		}
 
-//		/*
-		var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/ship_trail.obj", offset: new THREE.Vector3(0, 0, -10), rotation: new THREE.Vector3(0, 0, 0), scale: 0.8, matrix: this.actor.sceneObject.matrix};
-		var trail = this.actor.gameBoard.spawnActor(explosionTemplate);
-		trail.ai.spinRate = 0;
-		trail.ai.speedUp = 0.2;
-		trail.ai.speedDown = 0.04;
-		trail.ai.startScale = 1.0;
-		trail.ai.maxScale = 1.0;
-		trail.ai.minScale = 0.04;
-		trail.ai.explode();
+		// If trails are enabled, use them
+		if( this.trailEnabled )
+		{
+			var thisEnemy = this;
+			var explosionTemplate = {aiClassName: "Explosion", modelName: thisEnemy.trailModelFile, offset: new THREE.Vector3(0, 0, -10), rotation: new THREE.Vector3(0, 0, 0), scale: 0.8, matrix: this.actor.sceneObject.matrix};
+			var trail = this.actor.gameBoard.spawnActor(explosionTemplate);
+			trail.ai.spinRate = 0;
+			trail.ai.speedUp = 0.2;
+			trail.ai.speedDown = 0.04;
+			trail.ai.startScale = 1.0;
+			trail.ai.maxScale = 1.0;
+			trail.ai.minScale = 0.04;
+			trail.ai.explode();
+		}
 		//trail.sceneObject.updateMatrix();
 //		*/
 	}
@@ -462,6 +563,27 @@ EnemyShip.prototype.onTick = function()
 			}
 			else if( this.actor.gameEvent.eventName == "destroy" )
 			{
+				// If this ship was on the networked list, update our network dead ship state.
+
+				if( this.actor.gameBoard.networkReady )
+				{
+					if( this.actor.gameBoard.isLocalPlayer )
+					{
+//						var i;
+//						for( i = 0; i < this.gameBoard.networkedShips.length; i++ )
+//						{
+//							if( this.gameBoard.networkedShips[i] == this.actor )
+//							{
+//								this.gameBoard.networkedShips[i] == null;
+
+								// Bitmask it
+								this.actor.gameBoard.networkObject.userData.syncData.deadShips |= (1 << this.shipIndex);
+								this.actor.gameBoard.networkObject.isNetworkDirty = true;
+//							}
+//						}
+					}
+				}
+
 				this.gameBoard.removeActor(this.actor);
 			}
 		}
@@ -582,6 +704,16 @@ function PlayerTurret(actor)
 	sequenceEntrance0.actor = this.actor;
 	sequenceEntrance0.gameBoard = this.gameBoard;
 	this.sequences[sequenceEntrance0.name] = sequenceEntrance0;
+
+	// Network stuff
+	if( this.actor.gameBoard.networkReady )
+	{
+		if( this.actor.gameBoard.isLocalPlayer )
+		{
+			this.actor.gameBoard.networkObject.userData.syncData.turret = {health: this.health, yaw: 0};
+			this.actor.gameBoard.networkObject.isNetworkDirty = true;
+		}
+	}
 }
 
 PlayerTurret.prototype.doFire = function(fireEvent)
@@ -628,22 +760,26 @@ PlayerTurret.prototype.onTick = function()
 		*/
 
 		// Check if a ship has crashed into us
-		var i;
-		var count = 0;
-		for( i = 0; i < this.gameBoard.actors.length; i++ )
+
+		if( !this.actor.gameBoard.networkReady || this.actor.gameBoard.isLocalPlayer )
 		{
-			var actor = this.gameBoard.actors[i];
-			if(actor == this.actor || actor.team == this.actor.team || !actor.sceneObject )
-				continue;
-
-			count++;
-
-			// Check for collisions.  Note that this is expensive.  It would make more sense for actors that want to detect collisions register themselves with the game board, and it check if any registered objects collide and set game events on them accordingly.
-			var collides = this.gameBoard.detectCollision(this.actor, actor);
-			if( collides )
+			var i;
+			var count = 0;
+			for( i = 0; i < this.gameBoard.actors.length; i++ )
 			{
-				this.actor.setGameEvent({eventName: "damage", amount: actor.ai.damageAmount, priority: 1, stopsSequence: false});
-				actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
+				var actor = this.gameBoard.actors[i];
+				if(actor == this.actor || actor.team == this.actor.team || !actor.sceneObject )
+					continue;
+
+				count++;
+
+				// Check for collisions.  Note that this is expensive.  It would make more sense for actors that want to detect collisions register themselves with the game board, and it check if any registered objects collide and set game events on them accordingly.
+				var collides = this.gameBoard.detectCollision(this.actor, actor);
+				if( collides )
+				{
+					this.actor.setGameEvent({eventName: "damage", amount: actor.ai.damageAmount, priority: 1, stopsSequence: false});
+					actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
+				}
 			}
 		}
 	}
@@ -662,6 +798,25 @@ PlayerTurret.prototype.onTick = function()
 				this.actor.sceneObject.rotation.x = oldPitch;
 				this.actor.sceneObject.rotation.y = this.actor.sceneObject.rotation.y;
 				this.actor.sceneObject.rotation.z = oldRoll;
+
+				// network stuff
+				if( this.actor.gameBoard.networkReady )
+				{
+					if( this.actor.gameBoard.isLocalPlayer )
+					{
+						if( this.actor.gameBoard.tickCount - this.actor.gameBoard.networkLastAimTick > this.actor.gameBoard.networkAimRate )
+						{
+							this.actor.gameBoard.networkLastAimTick = this.actor.gameBoard.tickCount;
+
+							var rot = this.actor.gameBoard.playerTurret.sceneObject.rotation;
+							// NOTE THAT IF YOU ADDED ALL 3 VALUES, THEY'D HAVE TO BE SET INDIVIDUALLY OR THESE WOULD HAVE TO BE MERGED TO AVOID OVERWRITING NON-ROTATION VALUES IN THE DATABASE
+//							var turretParams = {pitch: rot.x, yaw: rot.y, roll: rot.z};	// tick: board.tickCount could also be added here if we wanted to let the server player play a few ticks ahead of clients and have them interpolate
+							this.actor.gameBoard.networkObject.userData.syncData.turret.yaw = rot.y;
+
+							this.actor.gameBoard.networkObject.isNetworkDirty = true;
+						}
+					}
+				}
 			}
 			else if( this.actor.gameEvent.eventName == "fire" )
 			{
@@ -691,6 +846,16 @@ PlayerTurret.prototype.onTick = function()
 				{
 					this.gameBoard.playSound(this.damageSoundFile, 0.2);
 				}
+
+				// Network stuff
+				if( this.actor.gameBoard.networkReady )
+				{
+					if( this.actor.gameBoard.isLocalPlayer )
+					{
+						this.actor.gameBoard.networkObject.userData.syncData.turret.health = this.health;
+						this.actor.gameBoard.networkObject.isNetworkDirty = true;
+					}
+				}
 			}
 			else if( this.actor.gameEvent.eventName == "destroy" )
 			{
@@ -719,7 +884,7 @@ function PlayerLaser(actor)
 	this.gameBoard = actor.gameBoard;
 
 	this.health = 1;
-	this.damageAmount = 5000;
+	this.damageAmount = 70;
 	this.maxDist = 700;
 	this.maxDist = this.maxDist * this.gameBoard.scaleFactor;
 }
@@ -748,7 +913,9 @@ PlayerLaser.prototype.onTick = function()
 			var collides = this.gameBoard.detectCollision(this.actor, actor);
 			if( collides )
 			{
-				actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
+				if( this.actor.gameBoard.isLocalPlayer || !this.actor.gameBoard.networkReady || this.actor.gameBoard.networkObject.userData.syncData.localPlayerName == "none" )
+					actor.setGameEvent({eventName: "damage", amount: this.damageAmount, priority: 1, stopsSequence: false});
+
 				this.actor.setGameEvent({eventName: "damage", amount: actor.ai.damageAmount, priority: 1, stopsSequence: false});
 			}
 		}
@@ -940,8 +1107,24 @@ StartButton.prototype.onTick = function()
 	{
 		if( this.actor.gameEvent.eventName == "damage" )
 		{
-//			this.actor.setGameEvent({eventName: "destroy", priority: 100, stopsSequence: true});
-			this.actor.gameBoard.state.startHasBeenShot = true;
+			if( this.actor.gameBoard.networkReady )
+			{
+
+				// We want to set ourselves as the local player and start the game
+				if( !this.actor.gameBoard.isLocalPlayer && this.actor.gameBoard.networkObject.userData.syncData.localPlayerName == "none" )
+				{
+					this.actor.gameBoard.networkObject.userData.syncData.localPlayerName = this.actor.gameBoard.localUserName;
+					//this.actor.gameBoard.networkObject.isNetworkDirty = true;
+
+					// Sync us RIGHT NOW (because clients usally don't send any sync data during ticks unless they are the local player)
+					this.actor.gameBoard.networkObject.userData.syncData.lastSyncTick = this.actor.gameBoard.tickCount;
+					this.actor.gameBoard.firebaseSync.saveObject(this.actor.gameBoard.networkObject);
+				}
+			}
+			else
+			{
+				this.actor.gameBoard.state.startHasBeenShot = true;
+			}
 
 			var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/explosion.obj", offset: new THREE.Vector3(0, 0, 0), scale: 0.5, matrix: this.actor.sceneObject.matrix};
 			this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
@@ -950,5 +1133,41 @@ StartButton.prototype.onTick = function()
 
 			this.actor.gameBoard.removeActor(this.actor);
 		}
+		else if( this.actor.gameEvent.eventName == "destroy" )
+		{
+			var explosionTemplate = {aiClassName: "Explosion", modelName: "models/InterD/explosion.obj", offset: new THREE.Vector3(0, 0, 0), scale: 0.5, matrix: this.actor.sceneObject.matrix};
+			this.actor.gameBoard.spawnActor(explosionTemplate).ai.explode();
+
+			this.actor.gameBoard.playSound(this.dieSoundFile, 0.5);
+
+			this.actor.gameBoard.removeActor(this.actor);
+		}
 	}
+};
+
+function Asteroid(actor)
+{
+	this.actor = actor;
+	this.actor.team = 0;
+	this.actor.collideRadius = 1.0;
+
+	this.gameBoard = actor.gameBoard;
+
+	// This class could be expanded to have customizable attributes here for various sizes and types of explosions. (Maybe they can be passed into the explode message)
+	this.rotSpeed = 0.001;
+}
+
+/*
+Planet.prototype.explode = function()
+{
+	if( this.exploding != 0 )
+		return;
+
+	this.exploding = 1;
+};
+*/
+
+Asteroid.prototype.onTick = function()
+{
+	this.actor.sceneObject.rotateY(this.rotSpeed);
 };
