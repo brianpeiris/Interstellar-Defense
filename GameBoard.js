@@ -1,6 +1,6 @@
 var gNumAssets = 12;
 
-function GameBoard()
+function GameBoard(userDisplayName)
 {
 	this.isInAltspace = !!window.Alt;
 
@@ -17,6 +17,10 @@ function GameBoard()
 	this.networkedShips = null;	// This is an array of enemy ship actors that is local but will be synced with the deadShips bit mask. Up to 32 ships per sequence.
 	this.networkReady = false;	// This is automatically set when its ready.
 	this.networkBeamState = false;	// Detect when this game room has been beamed to a location, so we can close it here.
+
+	this.givenAltName = "";
+	if( typeof userDisplayName !== 'undefined' )
+		this.givenAltName = userDisplayName;
 
 	//this.altLocalUser = (this.isInAltspace) ? window.Alt.Users.getLocalUser() : null;
 	this.altLocalUser = null;
@@ -182,6 +186,7 @@ function GameBoard()
 	// Quickly grab some DOM elements
 	this.statKillsElem = document.getElementById("statKills");
 	this.currentPlayerElem = document.getElementById("playerName");
+	this.currentPlayerSlateElem = document.getElementById("playerSlate");
 	this.numPlayerElem = document.getElementById("playerCount");
 	
 
@@ -288,6 +293,8 @@ GameBoard.prototype.loadCrosshair = function()
     		board.networkObject = new THREE.Object3D();
     		board.networkObject.isNetworkDirty = false;
 
+    		board.showAlert({text: "CONNECTING TO SESSION...", duration: 1});
+
     		board.firebaseSync = new FirebaseSync(firebaseRootUrl, appId);
     		board.firebaseSync.addObject(board.networkObject, "gamestate");
     		board.firebaseSync.connect( function() {
@@ -305,7 +312,12 @@ GameBoard.prototype.loadCrosshair = function()
 	    				board.networkObject.userData.syncData.fire.yaw = 0;
 
 	    				if( board.localUserName == "none" )
-	    					board.localUserName = "Player 1";
+	    				{
+	    					if( typeof window.Alt !== 'undefined' )
+	    						board.localUserName = board.givenAltName;
+	    					else
+	    						board.localUserName = "Player 1";
+	    				}
 
 	    				board.firebaseSync.saveObject(board.networkObject);
 	    			}
@@ -316,7 +328,12 @@ GameBoard.prototype.loadCrosshair = function()
 	    				board.networkObject.userData.syncData.numPlayers = numPlayersNow;
 
 	    				if( board.localUserName == "none" )
-	    					board.localUserName = "Player " + numPlayersNow;
+	    				{
+	    					if( typeof window.Alt !== 'undefined' )
+	    						board.localUserName = board.givenAltName;
+	    					else
+	    						board.localUserName = "Player " + numPlayersNow;
+	    				}
 
 	    				// Sync the fact that we joined the game (num players increased)
 	    				board.firebaseSync.saveObject(board.networkObject);
@@ -325,7 +342,8 @@ GameBoard.prototype.loadCrosshair = function()
 		    		board.init();
 
 //		    		board.networkReady = true;	// Maybe network ready should not happen until after load_stage0 is called
-    			}, 3000);
+    			//}, 3000);
+				}, 1000);
     		});
     	}
     	else
@@ -920,7 +938,15 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 	}
 	else if( stateName == "gameover" )
 	{
-		this.showAlert({text: "GAME OVER"});
+		if( this.state.id == "load_earthArrival" )
+			this.showAlert({text: "WELCOME"});
+		else
+		{
+			if( this.state.id == "stage5" && this.playerTurret.ai.health > 0 )
+				this.showAlert({text: "YOU WIN!!"});
+			else
+				this.showAlert({text: "BETTER LUCK NEXT TIME!"});
+		}
 
 		//this.networkObject.userData.syncData.isBeamed = true;
 
@@ -954,13 +980,22 @@ GameBoard.prototype.setStateDelayed = function(stateName)
 		}});
 
 		var tickOffset = 0;
-		stateTickEvents.push({tick: tickOffset + 200, logic: function(){
-			thisGameBoard.showAlert({text: "You destroyed " + thisGameBoard.statKills + " ships!", duration: 300});
-		}});
+		if( this.state.id != "load_earthArrival" )
+		{
+			stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+				thisGameBoard.showAlert({text: "SHIPS DESTROYED: " + thisGameBoard.statKills, duration: 300});
+			}});
 
-		stateTickEvents.push({tick: tickOffset + 400, logic: function(){
-			thisGameBoard.showAlert({text: "Thanks for playing!", duration: 350});
-		}});
+			stateTickEvents.push({tick: tickOffset + 400, logic: function(){
+				thisGameBoard.showAlert({text: "THANKS FOR PLAYING", duration: 350});
+			}});
+		}
+		else
+		{
+			stateTickEvents.push({tick: tickOffset + 200, logic: function(){
+				thisGameBoard.showAlert({text: "DESTROY THE SHIPS TO SAVE EARTH!", duration: 300});
+			}});
+		}
 
 		this.state = {id: stateName, tick: 500, aimingEnabled: false, loading: false, caching: 0, tickEvents: stateTickEvents, startHasBeenShot: false};	// States without a tick are infinite!
 	}
@@ -1364,6 +1399,25 @@ GameBoard.prototype.rayCast = function(ray)
 
 	this.raycaster.set( ray.origin, ray.direction );
 
+	//this.showAlert({text: ray.origin.distanceTo(new THREE.Vector3(0, 0, 0))});
+
+	/*
+	var bIsWithinX = false;
+	if( ray.origin.x < window.innerWidth/2 && ray.origin.x > -window.innerWidth/2 )
+		bIsWithinX = true;
+
+	var bIsWithinY = false;
+	if( ray.origin.y < window.innerHeight/2 && ray.origin.y > -window.innerHeight/2 )
+		bIsWithinY = true;
+
+	var bIsWithinZ = false;
+	if( ray.origin.z < window.innerDepth/2 && ray.origin.z > -window.innerDepth/2 )
+		bIsWithinZ = true;
+
+	if( bIsWithinX && bIsWithinY && bIsWithinZ )
+		this.showAlert({text: "STAND OUTSIDE OF BOUNDING BOX TO AIM"});
+	*/
+
 /*
 	this.playerCursorPosition = ray.origin.add(ray.direction.multiplyScalar(1000.0));
 	this.playerTurret.setGameEvent({eventName: "setLook", priority: 0, stopsSequence: false});
@@ -1562,6 +1616,11 @@ GameBoard.prototype.tick = function()
 			this.lastNumPlayers = this.networkObject.userData.syncData.numPlayers;
 			this.numPlayerElem.innerText = this.lastNumPlayers;	
 		}
+
+		if( this.lastLocalUserName == "none" )
+			this.currentPlayerSlateElem.style.display = "none";
+		else
+			this.currentPlayerSlateElem.style.display = "block";
 	}
 
 	// AFTER THE SERVER EXECUTES THE LOGIC FOR THE TICK, SYNC THE NETWORK OBJECT

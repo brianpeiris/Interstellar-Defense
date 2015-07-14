@@ -244,6 +244,11 @@
 			position: fixed;
 			bottom: 0px;
 			right: 0px;
+
+				font-size: 20px;
+				font-family: Arial, sans-sarif;
+				font-weight: bold;
+				text-shadow: 2px 2px #000;
 		}
 
 		#playerName
@@ -283,7 +288,7 @@
 
 	<div id="warningSlate"></div>
 
-	<div id="playerSlate">Current Player: <div id="playerName">None</div><br /><div id="totalPlayers">Total Players: <div id="playerCount">0</div></div></div>
+	<div id="playerSlate" style="display: none;">CURRENT PLAYER: <div id="playerName" style="text-transform: uppercase;">None</div><br /><div id="totalPlayers">Total Players: <div id="playerCount">0</div></div></div>
 
 	<script src="DemoShip.js"></script>
 	<script src="Actor.js"></script>
@@ -450,7 +455,14 @@
 //						var button = document.getElementById("playButton"); button.readOnly = false; button.disabled = false;
 				}
 				else
-					initiateGame();
+				{
+					// First get the player name...
+					var localAltspaceUser = window.Alt.Users.getLocalUser();
+					localAltspaceUser.then(function(user)
+					{
+						initiateGame(user.displayName);
+					});
+				}
 			});
 		}
 		else
@@ -477,11 +489,14 @@
 		}
 
 		var board;
-		function initiateGame()
+		function initiateGame(userDisplayName)
 		{
 //			setTimeout(function()
 //			{
- 				board = new GameBoard();
+				if( typeof window.Alt !== 'undefined' )
+					board = new GameBoard(userDisplayName);
+				else
+					board = new GameBoard();
 
  				if( !board.isInAltspace )
 				{
