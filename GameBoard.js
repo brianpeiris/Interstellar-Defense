@@ -656,7 +656,7 @@ GameBoard.prototype.init = function()
 
 	if( this.isInAltspace )
 	{
-		this.renderer = new THREE.AltRenderer();
+		this.renderer = new THREE.AltRenderer({version:'0.1.0'});
 		document.getElementById("info").style.visibility = "hidden";	// No regular title while inside of AltspaceVR
 	}
 	else
