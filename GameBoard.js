@@ -298,6 +298,10 @@ GameBoard.prototype.loadCrosshair = function()
     		board.firebaseSync = new FirebaseSync(firebaseRootUrl, appId);
     		board.firebaseSync.addObject(board.networkObject, "gamestate");
     		board.firebaseSync.connect( function() {
+
+   				//var allDataRef = board.firebaseSync.firebaseRoot;
+				//allDataRef.remove();
+
     			// Because the syncData object is not immidately retrieved, a delay must be added.
     			setTimeout(function() {
     				// When we connect, we need to determine if we are the one setting up the room or not
