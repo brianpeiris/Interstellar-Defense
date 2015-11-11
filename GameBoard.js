@@ -207,7 +207,7 @@ function GameBoard(userDisplayName)
 	this.dragPlane = null;
 	this.listener = null;
 //	this.loader = null;
-	this.loader = new THREE.AltOBJMTLLoader();
+	this.loader = new THREE.OBJMTLLoader();
 	this.actors = null;
 	this.playerTurret = null;
 	this.lastSpawnedEnemy = 0;
@@ -277,7 +277,9 @@ GameBoard.prototype.loadCrosshair = function()
 {
 	var board = this;
 
-	this.loader.load("models/InterD/crosshair.obj", function ( loadedObject ) {
+	var objFile = "models/InterD/crosshair.obj";
+	var mtlFile = objFile.substring(0, objFile.length - 3) + "mtl";
+	this.loader.load(objFile, mtlFile, function ( loadedObject ) {
 		board.initOffset(loadedObject, new THREE.Vector3(-100, -50, -200), new THREE.Vector3(0, 0, 0), 0.25);
 		board.scene.add(loadedObject);
 		board.crosshair = loadedObject;
@@ -553,7 +555,7 @@ GameBoard.prototype.initCursorEvents = function(listener)
 	this.listener = listener;
 	this.dragPlane = listener;
 	this.listener.board = this;
-	this.listener.addEventListener( "holocursormove", this.onCursorMove);
+	this.scene.addEventListener( "cursormove", this.onCursorMove.bind(this));
 
 	var eventParams = { defaultTarget: this.listener };
 	this.cursorEvents = new CursorEvents(eventParams);
@@ -611,7 +613,7 @@ GameBoard.prototype.initCursorEvents = function(listener)
 
 	if( this.isInAltspace )
 	{
-		this.playerTurret.sceneObject.addEventListener("holocursordown", function(event) {
+		this.playerTurret.sceneObject.addEventListener("cursordown", function(event) {
 			if( thisGameBoard.networkReady && thisGameBoard.networkObject.userData.syncData.localPlayerName != "none" && !thisGameBoard.isLocalPlayer )
 				return;
 
@@ -628,7 +630,7 @@ GameBoard.prototype.initCursorEvents = function(listener)
 
 		if( this.isInAltspace )
 		{
-			this.crosshair.addEventListener("holocursordown", function(event) {
+			this.crosshair.addEventListener("cursordown", function(event) {
 				if( thisGameBoard.networkReady && thisGameBoard.networkObject.userData.syncData.localPlayerName != "none" && !thisGameBoard.isLocalPlayer )
 					return;
 
@@ -660,7 +662,7 @@ GameBoard.prototype.init = function()
 
 	if( this.isInAltspace )
 	{
-		this.renderer = new THREE.AltRenderer({version:'0.1.0'});
+		this.renderer = altspace.getThreeJSRenderer();
 		document.getElementById("info").style.visibility = "hidden";	// No regular title while inside of AltspaceVR
 	}
 	else
@@ -756,7 +758,7 @@ GameBoard.prototype.init = function()
 		//new THREE.BoxGeometry(230, 0.25, 300),
 		new THREE.BoxGeometry(1000, 0.25, 400),
 		//new THREE.BoxGeometry(1000, 0.25, 1000),
-		new THREE.MeshBasicMaterial( { color: "#00ff00", transparent: true, opacity: 0.0 })
+		new THREE.MeshBasicMaterial( { color: "#00ff00", transparent: true, opacity: 0.0, visible: false })
 	);
 
 /*
@@ -1359,7 +1361,8 @@ GameBoard.prototype.precacheModel = function(model_file_name)
 
 	var thisGameBoard = this;
 	var thisModelFileName = model_file_name;
-	this.loader.load(model_file_name, function( loadedObject ) { thisGameBoard.onModelCached(loadedObject, thisModelFileName); });
+	var mtl_file_name = model_file_name.substring(0, model_file_name.length - 3) + "mtl";
+	this.loader.load(model_file_name, mtl_file_name, function( loadedObject ) { thisGameBoard.onModelCached(loadedObject, thisModelFileName); });
 };
 
 GameBoard.prototype.onModelCached = function(loadedObject, modelFileName)
@@ -1451,10 +1454,8 @@ GameBoard.prototype.onCursorMove = function(e)
 {
 //	if( this.networkReady && (this.networkObject.userData.syncData.localPlayerName != "none" && !this.isLocalPlayer )
 //		return;
-	var board = this.board;
-
-	if( board.state.aimingEnabled )
-		board.rayCast(e.detail.cursorRay);
+	if( this.state.aimingEnabled )
+		board.rayCast(e.ray);
 };
 
 GameBoard.prototype.tick = function()
